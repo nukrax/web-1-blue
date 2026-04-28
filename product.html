@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nukrax — Phantom Hoodie</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #020202; --deep: #080808; --grey-dark: #111114; --grey-mid: #1a1a1f;
+    --grey-light: #2a2a32; --white: #f0f0f0; --white-dim: #888899;
+    --blue: #4fc3f7; --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Rajdhani', sans-serif; --font-mono: 'Space Mono', monospace;
+  }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--black); color: var(--white); font-family: var(--font-body); cursor: none; overflow-x: hidden; min-height: 100vh; }
+  .cursor { width: 10px; height: 10px; background: var(--blue); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: screen; }
+  .cursor-trail { width: 36px; height: 36px; border: 1px solid rgba(79,195,247,0.4); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: all 0.18s ease; }
+  .cursor.expand { transform: translate(-50%,-50%) scale(3); opacity: 0.4; }
+  .page-trans { position: fixed; inset: 0; background: var(--black); z-index: 8888; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; }
+  .page-trans.active { opacity: 1; pointer-events: all; }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; background: rgba(2,2,2,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(79,195,247,0.08); }
+  .nav-logo { font-family: var(--font-display); font-size: 28px; letter-spacing: 6px; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--blue); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { color: var(--white-dim); text-decoration: none; font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--blue); }
+  .nav-cart { display: flex; align-items: center; gap: 8px; color: var(--white-dim); font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-decoration: none; transition: color 0.3s; cursor: none; }
+  .nav-cart:hover { color: var(--blue); }
+  .cart-count { background: var(--blue); color: var(--black); border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: none; padding: 4px; background: none; border: none; }
+  .hamburger span { display: block; width: 24px; height: 1px; background: var(--white); transition: all 0.3s; }
+  .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(2,2,2,0.98); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 40px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .mobile-menu.open { opacity: 1; pointer-events: all; }
+  .mobile-menu a { font-family: var(--font-display); font-size: 48px; letter-spacing: 8px; color: var(--white); text-decoration: none; }
+
+  /* BREADCRUMB */
+  .breadcrumb {
+    padding: 100px 48px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-dim);
+  }
+  .breadcrumb a { color: var(--white-dim); text-decoration: none; transition: color 0.3s; }
+  .breadcrumb a:hover { color: var(--blue); }
+  .breadcrumb span { color: var(--white); }
+  .breadcrumb-sep { color: rgba(255,255,255,0.2); }
+
+  /* PRODUCT LAYOUT */
+  .product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 40px 48px 120px;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 80vh;
+    align-items: start;
+  }
+
+  /* LEFT - IMAGE */
+  .product-visuals { position: sticky; top: 100px; }
+  
+  .main-display {
+    position: relative;
+    aspect-ratio: 4/5;
+    background: var(--grey-dark);
+    border: 1px solid rgba(79,195,247,0.08);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .main-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(79,195,247,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  /* Corner decorations */
+  .main-display::after {
+    content: '';
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    border: 1px solid rgba(79,195,247,0.06);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .corner { position: absolute; width: 20px; height: 20px; z-index: 2; }
+  .corner-tl { top: 6px; left: 6px; border-top: 1px solid var(--blue); border-left: 1px solid var(--blue); }
+  .corner-tr { top: 6px; right: 6px; border-top: 1px solid var(--blue); border-right: 1px solid var(--blue); }
+  .corner-bl { bottom: 6px; left: 6px; border-bottom: 1px solid var(--blue); border-left: 1px solid var(--blue); }
+  .corner-br { bottom: 6px; right: 6px; border-bottom: 1px solid var(--blue); border-right: 1px solid var(--blue); }
+
+  #three-product { width: 100%; height: 100%; display: block; }
+
+  .img-controls {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    z-index: 3;
+    display: flex;
+    gap: 8px;
+  }
+  .img-ctrl-btn {
+    width: 36px; height: 36px;
+    background: rgba(2,2,2,0.8);
+    border: 1px solid rgba(79,195,247,0.2);
+    color: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    cursor: none;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    font-size: 14px;
+  }
+  .img-ctrl-btn:hover { background: rgba(79,195,247,0.1); border-color: var(--blue); }
+
+  /* Thumbnails */
+  .thumbs { display: flex; gap: 12px; }
+  .thumb {
+    width: 72px; height: 90px;
+    background: var(--grey-dark);
+    border: 1px solid rgba(255,255,255,0.06);
+    cursor: none;
+    transition: border-color 0.3s;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .thumb.active { border-color: var(--blue); }
+  .thumb:hover { border-color: rgba(79,195,247,0.4); }
+  .thumb svg { opacity: 0.5; transition: opacity 0.3s; }
+  .thumb.active svg, .thumb:hover svg { opacity: 0.9; }
+  .thumb-label {
+    position: absolute;
+    bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgba(79,195,247,0.5);
+    text-transform: uppercase;
+  }
+
+  /* RIGHT - INFO */
+  .product-info { padding: 0 0 0 64px; }
+
+  .product-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .product-tag::before { content: ''; width: 24px; height: 1px; background: var(--blue); }
+
+  .product-name {
+    font-family: var(--font-display);
+    font-size: clamp(52px, 5vw, 80px);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .product-edition {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--white-dim);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .product-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .price-main { font-family: var(--font-display); font-size: 48px; letter-spacing: 2px; color: var(--white); }
+  .price-usd { font-family: var(--font-mono); font-size: 14px; color: var(--white-dim); }
+  .price-badge {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    padding: 6px 14px;
+    border: 1px solid rgba(79,195,247,0.4);
+    color: var(--blue);
+    text-transform: uppercase;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .product-desc {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--white-dim);
+    margin-bottom: 40px;
+    letter-spacing: 0.5px;
+  }
+
+  /* SIZE */
+  .size-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--white-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .size-guide { color: var(--blue); cursor: none; text-decoration: underline; }
+  .sizes {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+  .size-btn {
+    width: 52px; height: 52px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: none;
+    color: var(--white-dim);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: none;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .size-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .size-btn.active { border-color: var(--blue); background: var(--blue); color: var(--black); font-weight: 700; }
+  .size-btn.sold-out { opacity: 0.25; pointer-events: none; }
+  .size-btn.sold-out::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: currentColor; transform: rotate(-45deg); }
+
+  /* ACTIONS */
+  .actions { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+  .btn-add {
+    width: 100%;
+    padding: 20px;
+    background: var(--blue);
+    color: var(--black);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    clip-path: polygon(16px 0%, 100% 0%, calc(100% - 16px) 100%, 0% 100%);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .btn-add::before { content: ''; position: absolute; inset: 0; background: white; opacity: 0; transition: opacity 0.3s; }
+  .btn-add:hover::before { opacity: 0.1; }
+  .btn-add:hover { box-shadow: 0 0 50px rgba(79,195,247,0.4); }
+  .btn-add.added { background: #1a8a4a; }
+
+  .btn-save {
+    width: 100%;
+    padding: 16px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white-dim);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(16px 0%, 100% 0%, calc(100% - 16px) 100%, 0% 100%);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-save:hover { border-color: var(--white); color: var(--white); }
+
+  /* DETAILS */
+  .detail-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .detail-tab {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 12px 24px 12px 0;
+    border: none;
+    background: none;
+    color: var(--white-dim);
+    cursor: none;
+    transition: color 0.3s;
+    position: relative;
+    margin-right: 24px;
+  }
+  .detail-tab::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 0; height: 1px; background: var(--blue); transition: width 0.3s; }
+  .detail-tab.active { color: var(--white); }
+  .detail-tab.active::after { width: 100%; }
+
+  .detail-content { display: none; font-size: 15px; line-height: 1.8; color: var(--white-dim); }
+  .detail-content.active { display: block; animation: fadeIn 0.3s ease; }
+  .detail-content ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .detail-content ul li::before { content: '—'; color: var(--blue); margin-right: 12px; font-family: var(--font-mono); font-size: 12px; }
+
+  /* NOTIFY TOAST */
+  .toast {
+    position: fixed;
+    bottom: 40px; right: 40px;
+    background: rgba(17,17,20,0.95);
+    border: 1px solid rgba(79,195,247,0.3);
+    padding: 20px 28px;
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(20px);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 3px; margin-bottom: 4px; }
+  .toast-msg { font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px; color: var(--blue); text-transform: uppercase; }
+
+  /* BOTTOM NAV MOBILE */
+  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8,8,8,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(79,195,247,0.1); padding: 12px 0 20px; z-index: 100; justify-content: space-around; }
+  .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; color: var(--white-dim); text-decoration: none; text-transform: uppercase; transition: color 0.3s; }
+  .bottom-nav a.active, .bottom-nav a:hover { color: var(--blue); }
+  .bottom-nav svg { width: 20px; height: 20px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 900px) {
+    .product-layout { grid-template-columns: 1fr; padding: 24px 20px 120px; gap: 40px; }
+    .product-visuals { position: relative; top: auto; }
+    .product-info { padding: 0; }
+    nav { padding: 16px 20px; }
+    .nav-links, .nav-cart { display: none; }
+    .hamburger { display: flex; }
+    .mobile-menu { display: flex; }
+    .breadcrumb { padding: 88px 20px 0; }
+    .bottom-nav { display: flex; }
+  }
+  @media (max-width: 480px) {
+    .sizes { flex-wrap: wrap; }
+    .toast { right: 20px; left: 20px; bottom: 100px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-trans" id="pageTrans"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">nuk<span>rax</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html">Shop</a></li>
+    <li><a href="cart.html">Cart</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span class="cart-count" id="cartCount">0</span>
+  </a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html" onclick="closeMenu()">Home</a>
+  <a href="shop.html" onclick="closeMenu()">Shop</a>
+  <a href="cart.html" onclick="closeMenu()">Cart</a>
+</div>
+
+<div class="breadcrumb">
+  <a href="index.html">Home</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="shop.html">Shop</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>Phantom Hoodie</span>
+</div>
+
+<div class="product-layout">
+  <!-- VISUALS -->
+  <div class="product-visuals">
+    <div class="main-display">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <canvas id="three-product"></canvas>
+      <div class="img-controls">
+        <button class="img-ctrl-btn" id="rotateBtn" title="Auto Rotate">⟳</button>
+        <button class="img-ctrl-btn" id="resetBtn" title="Reset">⊙</button>
+      </div>
+    </div>
+    <div class="thumbs">
+      <div class="thumb active" onclick="switchView('front',this)">
+        <svg width="32" height="36" viewBox="0 0 200 220" fill="none"><path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="#4fc3f7" stroke-width="2" fill="rgba(79,195,247,0.05)"/></svg>
+        <span class="thumb-label">Front</span>
+      </div>
+      <div class="thumb" onclick="switchView('back',this)">
+        <svg width="32" height="36" viewBox="0 0 200 220" fill="none"><path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="#888" stroke-width="2" fill="rgba(255,255,255,0.02)"/><line x1="100" y1="52" x2="100" y2="185" stroke="rgba(136,136,136,0.3)" stroke-width="1"/></svg>
+        <span class="thumb-label">Back</span>
+      </div>
+      <div class="thumb" onclick="switchView('detail',this)">
+        <svg width="32" height="36" viewBox="0 0 200 220" fill="none"><circle cx="100" cy="100" r="50" stroke="#4fc3f7" stroke-width="2" fill="rgba(79,195,247,0.05)"/><circle cx="100" cy="100" r="25" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="4,4"/></svg>
+        <span class="thumb-label">Detail</span>
+      </div>
+      <div class="thumb" onclick="switchView('flat',this)">
+        <svg width="32" height="36" viewBox="0 0 200 220" fill="none"><rect x="50" y="60" width="100" height="130" stroke="#4fc3f7" stroke-width="2" fill="rgba(79,195,247,0.03)"/><path d="M50 80 L30 60 L50 60" stroke="#4fc3f7" stroke-width="1"/><path d="M150 80 L170 60 L150 60" stroke="#4fc3f7" stroke-width="1"/></svg>
+        <span class="thumb-label">Flat</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div class="product-info">
+    <p class="product-tag">Drop 01 — FW 2025</p>
+    <h1 class="product-name">Phantom<br>Hoodie</h1>
+    <p class="product-edition">Limited Edition — Only 50 Units Worldwide</p>
+
+    <div class="product-price-row">
+      <span class="price-main">₹4,999</span>
+      <span class="price-usd">/ $60 USD</span>
+      <span class="price-badge">Limited</span>
+    </div>
+
+    <p class="product-desc">
+      Engineered for those who exist at the edge. The Phantom Hoodie is crafted from 400GSM heavyweight brushed fleece — uncompromisingly warm, aggressively structured. Drop-shoulder silhouette. Dual-layer hood. Kangaroo pocket with zip. Ribbed cuffs and hem. Zero compromise.
+    </p>
+
+    <div class="size-label">
+      <span>Select Size</span>
+      <span class="size-guide">Size Guide</span>
+    </div>
+    <div class="sizes" id="sizeContainer">
+      <button class="size-btn" onclick="selectSize(this)">XS</button>
+      <button class="size-btn" onclick="selectSize(this)">S</button>
+      <button class="size-btn active" onclick="selectSize(this)">M</button>
+      <button class="size-btn" onclick="selectSize(this)">L</button>
+      <button class="size-btn" onclick="selectSize(this)">XL</button>
+      <button class="size-btn sold-out" onclick="selectSize(this)">XXL</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn-add" id="addToCartBtn" onclick="addToCart()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+        Add to Cart
+      </button>
+      <button class="btn-save">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        Save to Wishlist
+      </button>
+    </div>
+
+    <!-- DETAIL TABS -->
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="switchTab(this,'details')">Details</button>
+      <button class="detail-tab" onclick="switchTab(this,'materials')">Materials</button>
+      <button class="detail-tab" onclick="switchTab(this,'shipping')">Shipping</button>
+    </div>
+    <div class="detail-content active" id="tab-details">
+      <ul>
+        <li>Drop-shoulder silhouette — oversized fit</li>
+        <li>Dual-layer reinforced hood with adjustable drawcord</li>
+        <li>Kangaroo pocket with hidden zip compartment</li>
+        <li>Ribbed cuffs, hem, and kangaroo pocket trim</li>
+        <li>Printed inner neck label</li>
+        <li>Unisex sizing — fits true to size</li>
+      </ul>
+    </div>
+    <div class="detail-content" id="tab-materials">
+      <ul>
+        <li>400GSM heavyweight brushed fleece</li>
+        <li>80% Organic Cotton / 20% Recycled Polyester</li>
+        <li>Pre-shrunk. Machine wash cold, tumble dry low</li>
+        <li>Colourfast — no fade guarantee for 60 washes</li>
+        <li>OEKO-TEX certified fabric</li>
+      </ul>
+    </div>
+    <div class="detail-content" id="tab-shipping">
+      <ul>
+        <li>Ships within 3–5 business days</li>
+        <li>Free shipping on orders over ₹2,000</li>
+        <li>Worldwide shipping available</li>
+        <li>Returns accepted within 14 days (unworn, tags on)</li>
+        <li>Tracking number provided via email</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title">Added to Cart</div>
+  <div class="toast-msg">Phantom Hoodie — M</div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="shop.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop</a>
+  <a href="cart.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Cart</a>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursorTrail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+function animTrail(){tx+=(mx-tx)*0.12;ty+=(my-ty)*0.12;trail.style.left=tx+'px';trail.style.top=ty+'px';requestAnimationFrame(animTrail);}
+animTrail();
+document.querySelectorAll('a,button').forEach(el=>{el.addEventListener('mouseenter',()=>cursor.classList.add('expand'));el.addEventListener('mouseleave',()=>cursor.classList.remove('expand'));});
+
+// PAGE TRANSITIONS
+document.querySelectorAll('a[href]').forEach(link=>{const href=link.getAttribute('href');if(!href||href.startsWith('#')||href.startsWith('http'))return;link.addEventListener('click',e=>{e.preventDefault();const t=document.getElementById('pageTrans');t.classList.add('active');setTimeout(()=>window.location.href=href,400);});});
+
+// HAMBURGER
+const hamburger=document.getElementById('hamburger');
+const mobileMenu=document.getElementById('mobileMenu');
+hamburger.addEventListener('click',()=>{hamburger.classList.toggle('open');mobileMenu.classList.toggle('open');});
+function closeMenu(){hamburger.classList.remove('open');mobileMenu.classList.remove('open');}
+
+// CART COUNT
+const cart=JSON.parse(localStorage.getItem('nukrax_cart')||'[]');
+document.getElementById('cartCount').textContent=cart.length;
+
+// SIZE SELECT
+let selectedSize='M';
+function selectSize(btn){
+  if(btn.classList.contains('sold-out'))return;
+  document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedSize=btn.textContent;
+}
+
+// TABS
+function switchTab(btn, id){
+  document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.detail-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ADD TO CART
+function addToCart(){
+  const btn=document.getElementById('addToCartBtn');
+  const existing=JSON.parse(localStorage.getItem('nukrax_cart')||'[]');
+  existing.push({id:'phantom-'+selectedSize,name:'Phantom Hoodie',size:selectedSize,price:4999,qty:1});
+  localStorage.setItem('nukrax_cart',JSON.stringify(existing));
+  document.getElementById('cartCount').textContent=existing.length;
+  btn.textContent='✓ Added!';
+  btn.classList.add('added');
+  const toast=document.getElementById('toast');
+  toast.querySelector('.toast-msg').textContent=`Phantom Hoodie — ${selectedSize}`;
+  toast.classList.add('show');
+  setTimeout(()=>{toast.classList.remove('show');},3000);
+  setTimeout(()=>{btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg> Add to Cart';btn.classList.remove('added');},3000);
+}
+
+// THREE.JS PRODUCT VIEWER
+const canvas=document.getElementById('three-product');
+const container=canvas.parentElement;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+function resizeRenderer(){
+  const w=container.clientWidth, h=container.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(50,1,0.1,100);
+camera.position.set(0,0,6);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x4fc3f7,0.3));
+const dLight=new THREE.DirectionalLight(0x4fc3f7,0.8);
+dLight.position.set(5,5,5);
+scene.add(dLight);
+const dLight2=new THREE.DirectionalLight(0xffffff,0.2);
+dLight2.position.set(-5,-3,-5);
+scene.add(dLight2);
+
+const group=new THREE.Group();
+
+// Main body
+const bodyGeo=new THREE.BoxGeometry(1.6,2,0.5,6,8,3);
+const mat=new THREE.MeshBasicMaterial({color:0x4fc3f7,wireframe:true,transparent:true,opacity:0.3});
+group.add(new THREE.Mesh(bodyGeo,mat));
+
+// Solid inner
+const solidMat=new THREE.MeshLambertMaterial({color:0x0d0d12,transparent:true,opacity:0.8});
+group.add(new THREE.Mesh(new THREE.BoxGeometry(1.55,1.95,0.48),solidMat));
+
+// Hood
+const hoodGeo=new THREE.SphereGeometry(0.7,16,10,0,Math.PI*2,0,Math.PI*0.65);
+const hood=new THREE.Mesh(hoodGeo,mat.clone());
+hood.position.set(0,1.3,0);
+group.add(hood);
+
+// Arms
+[-1.05,1.05].forEach(x=>{
+  const armG=new THREE.CylinderGeometry(0.24,0.26,1.5,8);
+  const arm=new THREE.Mesh(armG,mat.clone());
+  arm.rotation.z=x>0?-0.35:0.35;
+  arm.position.set(x*1.1,0.2,0);
+  group.add(arm);
+});
+
+// Glow ring
+const ringMat=new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:0.12});
+const ring=new THREE.Mesh(new THREE.TorusGeometry(2.6,0.012,8,100),ringMat);
+group.add(ring);
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(2.0,0.008,8,100),new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:0.08}));
+ring2.rotation.x=Math.PI/4;
+group.add(ring2);
+
+scene.add(group);
+
+// Particles
+const pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(600*3);
+for(let i=0;i<600*3;i++) pPos[i]=(Math.random()-0.5)*12;
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+scene.add(new THREE.Points(pGeo,new THREE.PointsMaterial({color:0x4fc3f7,size:0.02,transparent:true,opacity:0.4})));
+
+// Mouse drag
+let isDragging=false,lastX=0,lastY=0,autoRotate=true;
+canvas.addEventListener('mousedown',e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;autoRotate=false;});
+document.addEventListener('mouseup',()=>{isDragging=false;});
+document.addEventListener('mousemove',e=>{
+  if(!isDragging)return;
+  group.rotation.y+=(e.clientX-lastX)*0.01;
+  group.rotation.x+=(e.clientY-lastY)*0.008;
+  lastX=e.clientX;lastY=e.clientY;
+});
+
+// Touch drag
+canvas.addEventListener('touchstart',e=>{isDragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;autoRotate=false;},{passive:true});
+canvas.addEventListener('touchend',()=>{isDragging=false;});
+canvas.addEventListener('touchmove',e=>{
+  if(!isDragging)return;
+  group.rotation.y+=(e.touches[0].clientX-lastX)*0.01;
+  group.rotation.x+=(e.touches[0].clientY-lastY)*0.008;
+  lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+},{passive:true});
+
+document.getElementById('rotateBtn').addEventListener('click',()=>{autoRotate=!autoRotate;});
+document.getElementById('resetBtn').addEventListener('click',()=>{group.rotation.set(0,0,0);autoRotate=true;});
+
+let t=0;
+function animate(){
+  requestAnimationFrame(animate);
+  t+=0.008;
+  if(autoRotate) group.rotation.y+=0.006;
+  group.position.y=Math.sin(t)*0.08;
+  ring.rotation.z+=0.002;
+  ring2.rotation.y+=0.004;
+  renderer.render(scene,camera);
+}
+resizeRenderer();
+animate();
+window.addEventListener('resize',resizeRenderer);
+
+// VIEW SWITCHING
+let currentView='front';
+function switchView(view,thumb){
+  document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
+  thumb.classList.add('active');
+  currentView=view;
+  group.children.forEach(m=>{
+    if(m.material){
+      m.material.opacity=view==='detail'?0.5:m===group.children[1]?0.8:(m.material.wireframe?0.3:0.08);
+    }
+  });
+  if(view==='back'){group.rotation.y=Math.PI;autoRotate=false;}
+  else if(view==='detail'){camera.position.z=3.5;autoRotate=false;}
+  else if(view==='flat'){group.rotation.set(Math.PI/2,0,0);autoRotate=false;}
+  else{group.rotation.set(0,0,0);camera.position.z=6;autoRotate=true;}
+}
+</script>
+</body>
+</html>
