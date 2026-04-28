@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nukrax — shop</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #020202; --deep: #080808; --grey-dark: #111114; --grey-mid: #1a1a1f;
+    --grey-light: #2a2a32; --white: #f0f0f0; --white-dim: #888899;
+    --blue: #4fc3f7; --blue-dim: #1a6fa8; --blue-glow: rgba(79,195,247,0.15);
+    --font-display: 'Bebas Neue', sans-serif; --font-body: 'Rajdhani', sans-serif; --font-mono: 'Space Mono', monospace;
+  }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--black); color: var(--white); font-family: var(--font-body); cursor: none; overflow-x: hidden; }
+
+  .cursor { width: 10px; height: 10px; background: var(--blue); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: screen; }
+  .cursor-trail { width: 36px; height: 36px; border: 1px solid rgba(79,195,247,0.4); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: all 0.18s ease; }
+  .cursor.expand { transform: translate(-50%,-50%) scale(3); opacity: 0.4; }
+  .page-trans { position: fixed; inset: 0; background: var(--black); z-index: 8888; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; }
+  .page-trans.active { opacity: 1; pointer-events: all; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; background: rgba(2,2,2,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(79,195,247,0.08); }
+  .nav-logo { font-family: var(--font-display); font-size: 28px; letter-spacing: 6px; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--blue); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { color: var(--white-dim); text-decoration: none; font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; transition: color 0.3s; position: relative; }
+  .nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:1px; background:var(--blue); transition:width 0.3s ease; }
+  .nav-links a:hover, .nav-links a.active { color: var(--blue); }
+  .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+  .nav-cart { display: flex; align-items: center; gap: 8px; color: var(--white-dim); font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-decoration: none; transition: color 0.3s; cursor: none; }
+  .nav-cart:hover { color: var(--blue); }
+  .cart-count { background: var(--blue); color: var(--black); border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: none; padding: 4px; background: none; border: none; }
+  .hamburger span { display: block; width: 24px; height: 1px; background: var(--white); transition: all 0.3s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(2,2,2,0.98); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 40px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .mobile-menu.open { opacity: 1; pointer-events: all; }
+  .mobile-menu a { font-family: var(--font-display); font-size: 48px; letter-spacing: 8px; color: var(--white); text-decoration: none; transition: color 0.3s; }
+  .mobile-menu a:hover { color: var(--blue); }
+
+  /* PAGE HEADER */
+  .page-header {
+    padding: 160px 48px 60px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: 'SHOP';
+    font-family: var(--font-display);
+    font-size: 300px;
+    position: absolute;
+    right: -20px; top: 50%; transform: translateY(-50%);
+    opacity: 0.02;
+    letter-spacing: 10px;
+    pointer-events: none;
+    line-height: 1;
+  }
+  .page-header-inner { max-width: 1400px; margin: 0 auto; }
+  .page-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 5px; color: var(--blue); text-transform: uppercase; margin-bottom: 16px; }
+  .page-title { font-family: var(--font-display); font-size: clamp(60px, 8vw, 100px); letter-spacing: 6px; text-transform: uppercase; line-height: 1; }
+  .page-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1px rgba(79,195,247,0.4); }
+
+  /* FILTER BAR */
+  .filter-bar {
+    padding: 24px 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: var(--deep);
+    position: sticky;
+    top: 72px;
+    z-index: 90;
+    backdrop-filter: blur(20px);
+  }
+  .filter-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .filter-tabs { display: flex; gap: 4px; }
+  .filter-tab {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: none;
+    color: var(--white-dim);
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .filter-tab.active, .filter-tab:hover { border-color: var(--blue); color: var(--blue); background: rgba(79,195,247,0.06); }
+
+  .sort-select {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--grey-dark);
+    color: var(--white-dim);
+    cursor: none;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .sort-select:hover { border-color: var(--blue); }
+
+  .filter-count { font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px; color: var(--white-dim); }
+  .filter-count span { color: var(--blue); }
+
+  /* PRODUCT GRID */
+  .shop-main { padding: 48px 48px 120px; max-width: 1400px; margin: 0 auto; }
+  .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+  .product-card {
+    position: relative;
+    cursor: none;
+    transition: transform 0.1s ease;
+    transform-style: preserve-3d;
+    animation: fadeInCard 0.6s ease both;
+  }
+  @keyframes fadeInCard { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+  .product-card:nth-child(1) { animation-delay: 0.05s; }
+  .product-card:nth-child(2) { animation-delay: 0.1s; }
+  .product-card:nth-child(3) { animation-delay: 0.15s; }
+  .product-card:nth-child(4) { animation-delay: 0.2s; }
+  .product-card:nth-child(5) { animation-delay: 0.25s; }
+  .product-card:nth-child(6) { animation-delay: 0.3s; }
+
+  .card-image-wrap {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    background: var(--grey-dark);
+    border: 1px solid rgba(255,255,255,0.04);
+    margin-bottom: 16px;
+  }
+  .card-image {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.6s ease;
+    position: relative;
+  }
+  .product-card:hover .card-image { transform: scale(1.04); }
+
+  .card-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 80%, rgba(79,195,247,0.12) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.5s;
+    pointer-events: none;
+  }
+  .product-card:hover .card-glow { opacity: 1; }
+
+  .card-badge {
+    position: absolute;
+    top: 16px; left: 16px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    background: var(--blue);
+    color: var(--black);
+    font-weight: 700;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+  .card-badge.sold { background: var(--grey-light); color: var(--white-dim); }
+
+  .card-quick {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(2,2,2,0.9);
+    border-top: 1px solid rgba(79,195,247,0.2);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--blue);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    backdrop-filter: blur(10px);
+    text-decoration: none;
+  }
+  .product-card:hover .card-quick { transform: translateY(0); }
+
+  .card-info { padding: 0 4px; }
+  .card-name { font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .card-meta { display: flex; justify-content: space-between; align-items: center; }
+  .card-price { font-family: var(--font-mono); font-size: 13px; color: var(--blue); }
+  .card-category { font-family: var(--font-mono); font-size: 9px; letter-spacing: 3px; color: var(--white-dim); text-transform: uppercase; }
+  .card-sizes { display: flex; gap: 6px; margin-top: 10px; }
+  .card-size {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white-dim);
+    background: none;
+    cursor: none;
+    transition: all 0.2s;
+  }
+  .card-size:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* HOODIE SVG */
+  .hoodie-svg { opacity: 0.7; transition: opacity 0.3s; }
+  .product-card:hover .hoodie-svg { opacity: 1; }
+
+  /* BOTTOM NAV MOBILE */
+  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8,8,8,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(79,195,247,0.1); padding: 12px 0 20px; z-index: 100; justify-content: space-around; }
+  .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; color: var(--white-dim); text-decoration: none; text-transform: uppercase; transition: color 0.3s; }
+  .bottom-nav a.active, .bottom-nav a:hover { color: var(--blue); }
+  .bottom-nav svg { width: 20px; height: 20px; }
+
+  footer { background: var(--grey-dark); border-top: 1px solid rgba(255,255,255,0.05); padding: 48px; text-align: center; }
+  .footer-logo { font-family: var(--font-display); font-size: 36px; letter-spacing: 6px; color: var(--white); }
+  .footer-logo span { color: var(--blue); }
+  .footer-copy { margin-top: 16px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,0.2); text-transform: uppercase; }
+
+  @media (max-width: 1024px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .nav-links, .nav-cart { display: none; }
+    .hamburger { display: flex; }
+    .mobile-menu { display: flex; }
+    .page-header { padding: 120px 20px 40px; }
+    .filter-bar { padding: 16px 20px; top: 64px; }
+    .filter-tabs { flex-wrap: wrap; gap: 6px; }
+    .shop-main { padding: 24px 20px 100px; }
+    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .bottom-nav { display: flex; }
+    footer { padding-bottom: 100px; }
+  }
+  @media (max-width: 480px) {
+    .product-grid { grid-template-columns: 1fr; }
+    .filter-inner { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="page-trans" id="pageTrans"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">nuk<span>rax</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html" class="active">Shop</a></li>
+    <li><a href="cart.html">Cart</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span class="cart-count" id="cartCount">0</span>
+  </a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html" onclick="closeMenu()">Home</a>
+  <a href="shop.html" onclick="closeMenu()">Shop</a>
+  <a href="cart.html" onclick="closeMenu()">Cart</a>
+</div>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <p class="page-tag">FW 2025 — New Wave Collection</p>
+    <h1 class="page-title">All <em>Drops</em></h1>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterProducts(this,'all')">All</button>
+      <button class="filter-tab" onclick="filterProducts(this,'hoodie')">Hoodies</button>
+      <button class="filter-tab" onclick="filterProducts(this,'crewneck')">Crewnecks</button>
+      <button class="filter-tab" onclick="filterProducts(this,'limited')">Limited</button>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;">
+      <select class="sort-select" onchange="sortProducts(this.value)">
+        <option value="">Sort: Featured</option>
+        <option value="low">Price: Low → High</option>
+        <option value="high">Price: High → Low</option>
+        <option value="new">Newest</option>
+      </select>
+      <span class="filter-count"><span id="productCount">6</span> items</span>
+    </div>
+  </div>
+</div>
+
+<main class="shop-main">
+  <div class="product-grid" id="productGrid">
+
+    <div class="product-card" data-category="hoodie limited" data-price="4999" data-id="1">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="160" viewBox="0 0 200 220" fill="none">
+            <path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.04)"/>
+            <path d="M100 52 Q100 35 85 28 Q78 25 70 26" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M100 52 Q100 35 115 28 Q122 25 130 26" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <line x1="62" y1="100" x2="138" y2="100" stroke="rgba(79,195,247,0.2)" stroke-width="0.5"/>
+            <line x1="62" y1="140" x2="138" y2="140" stroke="rgba(79,195,247,0.2)" stroke-width="0.5"/>
+            <path d="M85 185 L85 200 L115 200 L115 185" stroke="#4fc3f7" stroke-width="1" fill="rgba(79,195,247,0.03)"/>
+            <circle cx="100" cy="195" r="2" fill="#4fc3f7" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <span class="card-badge">Limited</span>
+        <a href="product.html?id=1" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Phantom Hoodie</h3>
+        <div class="card-meta">
+          <span class="card-price">₹4,999</span>
+          <span class="card-category">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card" data-category="hoodie" data-price="3499" data-id="2">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="160" viewBox="0 0 200 220" fill="none">
+            <path d="M35 65 L75 42 L100 55 L125 42 L165 65 L152 90 L140 82 L140 185 L60 185 L60 82 L48 90 Z" stroke="#888899" stroke-width="1.5" fill="rgba(255,255,255,0.02)"/>
+            <path d="M100 55 Q100 35 85 28 Q78 25 70 26" stroke="#888" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+            <path d="M100 55 Q100 35 115 28 Q122 25 130 26" stroke="#888" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+            <rect x="80" y="115" width="40" height="18" rx="9" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="rgba(255,255,255,0.02)"/>
+            <path d="M85 185 L85 200 L115 200 L115 185" stroke="#888" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <a href="product.html?id=2" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Void Oversized</h3>
+        <div class="card-meta">
+          <span class="card-price">₹3,499</span>
+          <span class="card-category">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button><button class="card-size">XXL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card" data-category="crewneck" data-price="2999" data-id="3">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="150" viewBox="0 0 200 210" fill="none">
+            <path d="M45 62 L80 45 L100 55 L120 45 L155 62 L145 82 L134 76 L134 180 L66 180 L66 76 L55 82 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.03)"/>
+            <path d="M88 55 Q100 48 112 55" stroke="#4fc3f7" stroke-width="1.5" fill="none"/>
+            <line x1="66" y1="108" x2="134" y2="108" stroke="rgba(79,195,247,0.15)" stroke-width="0.5"/>
+            <text x="85" y="145" font-family="monospace" font-size="12" fill="rgba(79,195,247,0.3)" letter-spacing="2">NKX</text>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <a href="product.html?id=3" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Ghost Crewneck</h3>
+        <div class="card-meta">
+          <span class="card-price">₹2,999</span>
+          <span class="card-category">Crewneck</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card" data-category="hoodie limited" data-price="5999" data-id="4">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="160" viewBox="0 0 200 220" fill="none">
+            <path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="rgba(200,200,255,0.6)" stroke-width="1.5" fill="rgba(200,200,255,0.03)"/>
+            <path d="M100 52 Q100 35 85 28 Q78 25 70 26" stroke="rgba(200,200,255,0.4)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M100 52 Q100 35 115 28 Q122 25 130 26" stroke="rgba(200,200,255,0.4)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M80 120 L90 110 L100 118 L110 108 L120 120" stroke="rgba(200,200,255,0.4)" stroke-width="1" fill="none"/>
+            <path d="M85 185 L85 200 L115 200 L115 185" stroke="rgba(200,200,255,0.4)" stroke-width="1" fill="rgba(200,200,255,0.02)"/>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <span class="card-badge">New</span>
+        <a href="product.html?id=4" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Spectre Edition</h3>
+        <div class="card-meta">
+          <span class="card-price">₹5,999</span>
+          <span class="card-category">Limited</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card" data-category="crewneck" data-price="2499" data-id="5">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="150" viewBox="0 0 200 210" fill="none">
+            <path d="M45 62 L80 45 L100 55 L120 45 L155 62 L145 82 L134 76 L134 180 L66 180 L66 76 L55 82 Z" stroke="#666" stroke-width="1.5" fill="rgba(255,255,255,0.015)"/>
+            <path d="M88 55 Q100 48 112 55" stroke="#666" stroke-width="1.5" fill="none"/>
+            <rect x="76" y="100" width="48" height="28" rx="4" stroke="rgba(255,255,255,0.1)" stroke-width="1" fill="none"/>
+            <line x1="76" y1="114" x2="124" y2="114" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <a href="product.html?id=5" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Null Crewneck</h3>
+        <div class="card-meta">
+          <span class="card-price">₹2,499</span>
+          <span class="card-category">Crewneck</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card" data-category="hoodie" data-price="3999" data-id="6">
+      <div class="card-image-wrap">
+        <div class="card-image">
+          <svg class="hoodie-svg" width="140" height="160" viewBox="0 0 200 220" fill="none">
+            <path d="M38 62 L78 42 L100 54 L122 42 L162 62 L151 87 L139 80 L139 186 L61 186 L61 80 L49 87 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.03)"/>
+            <path d="M100 54 Q100 34 84 27 Q77 24 69 25" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M100 54 Q100 34 116 27 Q123 24 131 25" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <circle cx="100" cy="125" r="16" stroke="rgba(79,195,247,0.3)" stroke-width="1" fill="none"/>
+            <circle cx="100" cy="125" r="8" stroke="rgba(79,195,247,0.2)" stroke-width="0.5" fill="rgba(79,195,247,0.04)"/>
+            <path d="M85 186 L85 200 L115 200 L115 186" stroke="#4fc3f7" stroke-width="1" fill="rgba(79,195,247,0.03)"/>
+          </svg>
+        </div>
+        <div class="card-glow"></div>
+        <span class="card-badge">Hot</span>
+        <a href="product.html?id=6" class="card-quick">Quick View →</a>
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">Echo Pullover</h3>
+        <div class="card-meta">
+          <span class="card-price">₹3,999</span>
+          <span class="card-category">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="shop.html" class="active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop</a>
+  <a href="cart.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Cart</a>
+</nav>
+
+<footer>
+  <div class="footer-logo">nuk<span>rax</span></div>
+  <p class="footer-copy">© 2025 nukrax — all rights reserved</p>
+</footer>
+
+<script>
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursorTrail');
+let mx=0, my=0, tx=0, ty=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cursor.style.left=mx+'px'; cursor.style.top=my+'px'; });
+function animTrail() { tx+=(mx-tx)*0.12; ty+=(my-ty)*0.12; trail.style.left=tx+'px'; trail.style.top=ty+'px'; requestAnimationFrame(animTrail); }
+animTrail();
+document.querySelectorAll('a,button').forEach(el => { el.addEventListener('mouseenter',()=>cursor.classList.add('expand')); el.addEventListener('mouseleave',()=>cursor.classList.remove('expand')); });
+
+document.querySelectorAll('a[href]').forEach(link => {
+  const href = link.getAttribute('href');
+  if (!href || href.startsWith('#') || href.startsWith('http')) return;
+  link.addEventListener('click', e => { e.preventDefault(); const t=document.getElementById('pageTrans'); t.classList.add('active'); setTimeout(()=>window.location.href=href, 400); });
+});
+
+const hamburger = document.getElementById('hamburger');
+const mobileMenu = document.getElementById('mobileMenu');
+hamburger.addEventListener('click', () => { hamburger.classList.toggle('open'); mobileMenu.classList.toggle('open'); });
+function closeMenu() { hamburger.classList.remove('open'); mobileMenu.classList.remove('open'); }
+
+const cart = JSON.parse(localStorage.getItem('nukrax_cart')||'[]');
+document.getElementById('cartCount').textContent = cart.length;
+
+// 3D TILT
+document.querySelectorAll('.product-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.transform = `perspective(800px) rotateY(${x*12}deg) rotateX(${-y*12}deg) translateZ(8px)`;
+  });
+  card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+});
+
+// FILTER
+function filterProducts(btn, category) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const cards = document.querySelectorAll('.product-card');
+  let count = 0;
+  cards.forEach(card => {
+    const cats = card.dataset.category;
+    const show = category === 'all' || cats.includes(category);
+    card.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('productCount').textContent = count;
+}
+
+// SORT
+function sortProducts(val) {
+  const grid = document.getElementById('productGrid');
+  const cards = [...grid.querySelectorAll('.product-card')];
+  if (val === 'low') cards.sort((a,b) => +a.dataset.price - +b.dataset.price);
+  else if (val === 'high') cards.sort((a,b) => +b.dataset.price - +a.dataset.price);
+  else if (val === 'new') cards.sort((a,b) => +b.dataset.id - +a.dataset.id);
+  cards.forEach(c => grid.appendChild(c));
+}
+</script>
+</body>
+</html>
