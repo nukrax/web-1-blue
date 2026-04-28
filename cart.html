@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nukrax — cart</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #020202; --deep: #080808; --grey-dark: #111114; --grey-mid: #1a1a1f;
+    --grey-light: #2a2a32; --white: #f0f0f0; --white-dim: #888899;
+    --blue: #4fc3f7; --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Rajdhani', sans-serif; --font-mono: 'Space Mono', monospace;
+  }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--black); color: var(--white); font-family: var(--font-body); cursor: none; overflow-x: hidden; min-height: 100vh; }
+  .cursor { width: 10px; height: 10px; background: var(--blue); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: screen; }
+  .cursor-trail { width: 36px; height: 36px; border: 1px solid rgba(79,195,247,0.4); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: all 0.18s ease; }
+  .cursor.expand { transform: translate(-50%,-50%) scale(3); opacity: 0.4; }
+  .page-trans { position: fixed; inset: 0; background: var(--black); z-index: 8888; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; }
+  .page-trans.active { opacity: 1; pointer-events: all; }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; background: rgba(2,2,2,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(79,195,247,0.08); }
+  .nav-logo { font-family: var(--font-display); font-size: 28px; letter-spacing: 6px; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--blue); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { color: var(--white-dim); text-decoration: none; font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--blue); }
+  .nav-cart { display: flex; align-items: center; gap: 8px; color: var(--blue); font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-decoration: none; }
+  .cart-count { background: var(--blue); color: var(--black); border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: none; padding: 4px; background: none; border: none; }
+  .hamburger span { display: block; width: 24px; height: 1px; background: var(--white); transition: all 0.3s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(2,2,2,0.98); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 40px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .mobile-menu.open { opacity: 1; pointer-events: all; }
+  .mobile-menu a { font-family: var(--font-display); font-size: 48px; letter-spacing: 8px; color: var(--white); text-decoration: none; }
+
+  /* PAGE HEADER */
+  .page-header { padding: 130px 48px 40px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .page-header-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; }
+  .page-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 5px; color: var(--blue); text-transform: uppercase; margin-bottom: 12px; }
+  .page-title { font-family: var(--font-display); font-size: clamp(60px, 8vw, 100px); letter-spacing: 6px; text-transform: uppercase; line-height: 1; }
+  .item-count { font-family: var(--font-mono); font-size: 12px; letter-spacing: 4px; color: var(--white-dim); text-transform: uppercase; padding-bottom: 16px; }
+  .item-count span { color: var(--blue); font-size: 24px; }
+
+  /* CART LAYOUT */
+  .cart-layout { display: grid; grid-template-columns: 1fr 380px; gap: 48px; padding: 48px 48px 160px; max-width: 1400px; margin: 0 auto; align-items: start; }
+
+  /* CART ITEMS */
+  .cart-items-wrap {}
+  .cart-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 48px;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--white-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 48px;
+    gap: 16px;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    animation: itemSlideIn 0.5s ease both;
+  }
+  @keyframes itemSlideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+  .cart-item.removing { opacity: 0; transform: translateX(40px); max-height: 0; padding: 0; overflow: hidden; }
+
+  .item-product { display: flex; align-items: center; gap: 20px; }
+  .item-thumb {
+    width: 80px; height: 100px;
+    background: var(--grey-dark);
+    border: 1px solid rgba(79,195,247,0.1);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-thumb::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(79,195,247,0.06) 0%, transparent 70%); }
+  .item-details {}
+  .item-name { font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .item-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px; color: var(--white-dim); text-transform: uppercase; display: flex; gap: 12px; }
+  .item-meta-tag { border: 1px solid rgba(79,195,247,0.2); color: var(--blue); padding: 2px 8px; font-size: 8px; }
+
+  .item-price { font-family: var(--font-mono); font-size: 14px; color: var(--white); }
+
+  .qty-ctrl { display: flex; align-items: center; gap: 0; border: 1px solid rgba(255,255,255,0.1); width: fit-content; }
+  .qty-btn { width: 32px; height: 32px; background: none; border: none; color: var(--white); font-family: var(--font-mono); font-size: 16px; cursor: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .qty-btn:hover { background: rgba(79,195,247,0.1); color: var(--blue); }
+  .qty-val { width: 36px; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--white); border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); padding: 8px 4px; }
+
+  .item-remove { background: none; border: none; color: rgba(255,255,255,0.2); cursor: none; transition: color 0.3s; display: flex; align-items: center; justify-content: center; }
+  .item-remove:hover { color: #ff4444; }
+
+  /* EMPTY STATE */
+  .empty-cart { text-align: center; padding: 80px 0; display: none; flex-direction: column; align-items: center; gap: 24px; }
+  .empty-cart.show { display: flex; }
+  .empty-icon { opacity: 0.2; }
+  .empty-title { font-family: var(--font-display); font-size: 48px; letter-spacing: 4px; text-transform: uppercase; }
+  .empty-sub { font-family: var(--font-mono); font-size: 11px; letter-spacing: 4px; color: var(--white-dim); text-transform: uppercase; }
+
+  /* PROMO */
+  .promo-wrap { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; gap: 8px; }
+  .promo-input {
+    flex: 1;
+    background: var(--grey-dark);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .promo-input::placeholder { color: rgba(255,255,255,0.2); }
+  .promo-input:focus { border-color: var(--blue); }
+  .promo-btn {
+    padding: 14px 24px;
+    background: rgba(79,195,247,0.1);
+    border: 1px solid rgba(79,195,247,0.3);
+    color: var(--blue);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .promo-btn:hover { background: var(--blue); color: var(--black); }
+
+  /* SUMMARY */
+  .cart-summary {
+    background: var(--grey-dark);
+    border: 1px solid rgba(79,195,247,0.08);
+    padding: 36px;
+    position: sticky;
+    top: 100px;
+  }
+  .summary-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .summary-row .label { color: var(--white-dim); }
+  .summary-row .value { color: var(--white); }
+  .summary-row .value.free { color: #1a8a4a; }
+
+  .summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    margin-top: 8px;
+  }
+  .summary-total .label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: var(--white-dim); }
+  .summary-total .value { font-family: var(--font-display); font-size: 40px; letter-spacing: 2px; color: var(--white); }
+
+  .checkout-btn {
+    width: 100%;
+    padding: 22px;
+    background: var(--blue);
+    color: var(--black);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    clip-path: polygon(14px 0%, 100% 0%, calc(100% - 14px) 100%, 0% 100%);
+    margin-top: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .checkout-btn::before { content: ''; position: absolute; inset: 0; background: white; opacity: 0; transition: opacity 0.3s; }
+  .checkout-btn:hover::before { opacity: 0.1; }
+  .checkout-btn:hover { box-shadow: 0 0 60px rgba(79,195,247,0.35); }
+
+  .continue-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .continue-link:hover { color: var(--blue); }
+
+  .security-badges {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .badge { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: rgba(255,255,255,0.2); text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+  .badge svg { opacity: 0.4; }
+
+  /* CHECKOUT MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(2,2,2,0.9);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(20px);
+    animation: fadeIn 0.3s ease;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--grey-dark);
+    border: 1px solid rgba(79,195,247,0.2);
+    padding: 60px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    animation: modalIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.85) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-icon { font-size: 48px; margin-bottom: 24px; }
+  .modal-title { font-family: var(--font-display); font-size: 40px; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; }
+  .modal-msg { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; color: var(--white-dim); text-transform: uppercase; margin-bottom: 32px; line-height: 1.8; }
+  .modal-close { padding: 16px 40px; background: none; border: 1px solid rgba(79,195,247,0.3); color: var(--blue); font-family: var(--font-mono); font-size: 10px; letter-spacing: 4px; text-transform: uppercase; cursor: none; transition: all 0.3s; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%); }
+  .modal-close:hover { background: rgba(79,195,247,0.1); }
+
+  /* BOTTOM NAV MOBILE */
+  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8,8,8,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(79,195,247,0.1); padding: 12px 0 20px; z-index: 100; justify-content: space-around; }
+  .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; color: var(--white-dim); text-decoration: none; text-transform: uppercase; transition: color 0.3s; }
+  .bottom-nav a.active, .bottom-nav a:hover { color: var(--blue); }
+  .bottom-nav svg { width: 20px; height: 20px; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (max-width: 960px) {
+    .cart-layout { grid-template-columns: 1fr; gap: 32px; padding: 32px 20px 140px; }
+    .cart-summary { position: relative; top: auto; }
+    nav { padding: 16px 20px; }
+    .nav-links, .nav-cart { display: none; }
+    .hamburger { display: flex; }
+    .mobile-menu { display: flex; }
+    .page-header { padding: 100px 20px 30px; }
+    .page-header-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .bottom-nav { display: flex; }
+    .cart-item { grid-template-columns: 1fr 80px 48px; gap: 12px; }
+    .cart-header { grid-template-columns: 1fr 80px 48px; }
+    .item-price { display: none; }
+  }
+  @media (max-width: 480px) {
+    .cart-item { grid-template-columns: 1fr 48px; }
+    .cart-header { display: none; }
+    .qty-ctrl { display: none; }
+    .item-thumb { width: 64px; height: 80px; }
+    .modal { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-trans" id="pageTrans"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">nuk<span>rax</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html">Shop</a></li>
+    <li><a href="cart.html">Cart</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span class="cart-count" id="cartCount">0</span>
+  </a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html" onclick="closeMenu()">Home</a>
+  <a href="shop.html" onclick="closeMenu()">Shop</a>
+  <a href="cart.html" onclick="closeMenu()">Cart</a>
+</div>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div>
+      <p class="page-tag">Your Selection</p>
+      <h1 class="page-title">Cart</h1>
+    </div>
+    <div class="item-count"><span id="itemCountDisplay">0</span> items</div>
+  </div>
+</div>
+
+<div class="cart-layout">
+  <!-- ITEMS -->
+  <div>
+    <div class="cart-header">
+      <span>Product</span>
+      <span>Price</span>
+      <span>Qty</span>
+      <span></span>
+    </div>
+
+    <div id="cartItemsList"></div>
+
+    <div class="empty-cart" id="emptyCart">
+      <div class="empty-icon">
+        <svg width="80" height="80" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <p class="empty-title">Void.</p>
+      <p class="empty-sub">Your cart is empty</p>
+      <a href="shop.html" style="margin-top:8px;padding:14px 32px;border:1px solid rgba(79,195,247,0.3);color:var(--blue);font-family:var(--font-mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;transition:all 0.3s;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">Browse Shop →</a>
+    </div>
+
+    <div class="promo-wrap" id="promoWrap">
+      <input type="text" class="promo-input" placeholder="Promo code" id="promoInput">
+      <button class="promo-btn" onclick="applyPromo()">Apply</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="cart-summary">
+    <h2 class="summary-title">Order Summary</h2>
+    <div class="summary-row"><span class="label">Subtotal</span><span class="value" id="subtotal">₹0</span></div>
+    <div class="summary-row"><span class="label">Shipping</span><span class="value free" id="shippingVal">Free</span></div>
+    <div class="summary-row"><span class="label">Discount</span><span class="value" id="discountVal">—</span></div>
+    <div class="summary-total">
+      <span class="label">Total</span>
+      <span class="value" id="totalVal">₹0</span>
+    </div>
+    <button class="checkout-btn" onclick="checkout()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Secure Checkout
+    </button>
+    <a href="shop.html" class="continue-link">← Continue Shopping</a>
+    <div class="security-badges">
+      <span class="badge"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>SSL Secure</span>
+      <span class="badge"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Guaranteed</span>
+      <span class="badge"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Free Returns</span>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal">
+    <div class="modal-icon">✦</div>
+    <h2 class="modal-title">Order Placed</h2>
+    <p class="modal-msg">Your nukrax order has been confirmed.<br>Shipping details will be sent to your email.<br><br>Thank you for being different.</p>
+    <button class="modal-close" onclick="closeModal()">Back to Home</button>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="shop.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop</a>
+  <a href="cart.html" class="active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Cart</a>
+</nav>
+
+<script>
+const cursor=document.getElementById('cursor');
+const trail=document.getElementById('cursorTrail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+function animTrail(){tx+=(mx-tx)*0.12;ty+=(my-ty)*0.12;trail.style.left=tx+'px';trail.style.top=ty+'px';requestAnimationFrame(animTrail);}
+animTrail();
+document.querySelectorAll('a,button').forEach(el=>{el.addEventListener('mouseenter',()=>cursor.classList.add('expand'));el.addEventListener('mouseleave',()=>cursor.classList.remove('expand'));});
+
+document.querySelectorAll('a[href]').forEach(link=>{const href=link.getAttribute('href');if(!href||href.startsWith('#')||href.startsWith('http'))return;link.addEventListener('click',e=>{e.preventDefault();const t=document.getElementById('pageTrans');t.classList.add('active');setTimeout(()=>window.location.href=href,400);});});
+
+const hamburger=document.getElementById('hamburger');
+const mobileMenu=document.getElementById('mobileMenu');
+hamburger.addEventListener('click',()=>{hamburger.classList.toggle('open');mobileMenu.classList.toggle('open');});
+function closeMenu(){hamburger.classList.remove('open');mobileMenu.classList.remove('open');}
+
+// PRODUCTS CATALOGUE (for name lookup)
+const PRODUCTS = {
+  'phantom-M': {name:'Phantom Hoodie',size:'M',price:4999},
+  'phantom-S': {name:'Phantom Hoodie',size:'S',price:4999},
+  'phantom-L': {name:'Phantom Hoodie',size:'L',price:4999},
+  'void-M': {name:'Void Oversized',size:'M',price:3499},
+  'ghost-M': {name:'Ghost Crewneck',size:'M',price:2999},
+};
+
+// DEMO ITEMS if cart is empty
+let cartData = JSON.parse(localStorage.getItem('nukrax_cart') || '[]');
+if (cartData.length === 0) {
+  cartData = [
+    {id:'phantom-M', name:'Phantom Hoodie', size:'M', price:4999, qty:1},
+    {id:'void-M', name:'Void Oversized', size:'L', price:3499, qty:2},
+  ];
+}
+
+let discount = 0;
+
+const HOODIE_SVGS = [
+  `<svg width="40" height="46" viewBox="0 0 200 220" fill="none"><path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.05)"/></svg>`,
+  `<svg width="40" height="46" viewBox="0 0 200 220" fill="none"><path d="M35 65 L75 42 L100 55 L125 42 L165 65 L152 90 L140 82 L140 185 L60 185 L60 82 L48 90 Z" stroke="#888" stroke-width="1.5" fill="rgba(255,255,255,0.02)"/></svg>`,
+  `<svg width="40" height="46" viewBox="0 0 200 210" fill="none"><path d="M45 62 L80 45 L100 55 L120 45 L155 62 L145 82 L134 76 L134 180 L66 180 L66 76 L55 82 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.03)"/></svg>`,
+];
+
+function renderCart() {
+  const list = document.getElementById('cartItemsList');
+  const empty = document.getElementById('emptyCart');
+  const promo = document.getElementById('promoWrap');
+  list.innerHTML = '';
+
+  if (cartData.length === 0) {
+    empty.classList.add('show');
+    promo.style.display = 'none';
+    updateSummary();
+    return;
+  }
+  empty.classList.remove('show');
+  promo.style.display = 'flex';
+
+  cartData.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'cart-item';
+    el.dataset.idx = idx;
+    el.style.animationDelay = (idx * 0.08) + 's';
+    el.innerHTML = `
+      <div class="item-product">
+        <div class="item-thumb">${HOODIE_SVGS[idx % HOODIE_SVGS.length]}</div>
+        <div class="item-details">
+          <h3 class="item-name">${item.name}</h3>
+          <div class="item-meta">
+            <span class="item-meta-tag">${item.size}</span>
+            <span>nukrax</span>
+          </div>
+        </div>
+      </div>
+      <div class="item-price">₹${item.price.toLocaleString()}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+        <span class="qty-val">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+      </div>
+      <button class="item-remove" onclick="removeItem(${idx})" title="Remove">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      </button>
+    `;
+    list.appendChild(el);
+  });
+
+  updateSummary();
+  document.getElementById('cartCount').textContent = cartData.reduce((a,b)=>a+b.qty,0);
+  document.getElementById('itemCountDisplay').textContent = cartData.reduce((a,b)=>a+b.qty,0);
+}
+
+function changeQty(idx, delta) {
+  cartData[idx].qty = Math.max(1, cartData[idx].qty + delta);
+  saveCart();
+  renderCart();
+}
+
+function removeItem(idx) {
+  const items = document.querySelectorAll('.cart-item');
+  const el = items[idx];
+  el.classList.add('removing');
+  setTimeout(() => {
+    cartData.splice(idx, 1);
+    saveCart();
+    renderCart();
+  }, 400);
+}
+
+function updateSummary() {
+  const sub = cartData.reduce((a,b) => a + b.price * b.qty, 0);
+  const shipping = sub > 2000 || sub === 0 ? 0 : 200;
+  const total = sub - discount + shipping;
+  document.getElementById('subtotal').textContent = `₹${sub.toLocaleString()}`;
+  document.getElementById('shippingVal').textContent = shipping === 0 ? 'Free' : `₹${shipping}`;
+  document.getElementById('shippingVal').className = shipping === 0 ? 'value free' : 'value';
+  document.getElementById('discountVal').textContent = discount > 0 ? `-₹${discount}` : '—';
+  document.getElementById('totalVal').textContent = `₹${total.toLocaleString()}`;
+}
+
+function saveCart() { localStorage.setItem('nukrax_cart', JSON.stringify(cartData)); }
+
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  if (code === 'NUKRAX20') {
+    discount = Math.round(cartData.reduce((a,b)=>a+b.price*b.qty,0) * 0.2);
+    updateSummary();
+    document.getElementById('promoInput').style.borderColor = '#1a8a4a';
+    document.getElementById('promoInput').value = '✓ NUKRAX20 applied — 20% off';
+  } else if (code === 'FIRST10') {
+    discount = Math.round(cartData.reduce((a,b)=>a+b.price*b.qty,0) * 0.1);
+    updateSummary();
+    document.getElementById('promoInput').style.borderColor = '#1a8a4a';
+    document.getElementById('promoInput').value = '✓ FIRST10 applied — 10% off';
+  } else {
+    document.getElementById('promoInput').style.borderColor = '#ff4444';
+    document.getElementById('promoInput').value = 'Invalid code';
+    setTimeout(()=>{document.getElementById('promoInput').value='';document.getElementById('promoInput').style.borderColor='';},2000);
+  }
+}
+
+function checkout() {
+  document.getElementById('checkoutModal').classList.add('show');
+  localStorage.removeItem('nukrax_cart');
+}
+
+function closeModal() {
+  document.getElementById('checkoutModal').classList.remove('show');
+  window.location.href = 'index.html';
+}
+
+renderCart();
+</script>
+</body>
+</html>
