@@ -7,146 +7,308 @@
 <title>nukrax — shop</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-:root {
-  --black:#020202; --deep:#080808; --grey-dark:#111114; --grey-mid:#1a1a1f;
-  --grey-light:#2a2a32; --white:#f0f0f0; --white-dim:#888899;
-  --blue:#4fc3f7;
-  --font-display:'Bebas Neue',sans-serif; --font-body:'Rajdhani',sans-serif; --font-mono:'Space Mono',monospace;
-  --nav-h:64px; --safe-bottom:env(safe-area-inset-bottom,0px);
+/* ── RESET ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --black:#020202;--deep:#080808;--grey-dark:#111114;--grey-mid:#1a1a1f;
+  --grey-light:#2a2a32;--white:#f0f0f0;--white-dim:#888899;--blue:#4fc3f7;
+  --font-display:'Bebas Neue',sans-serif;--font-body:'Rajdhani',sans-serif;--font-mono:'Space Mono',monospace;
+  --nav-h:64px;--safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html { scroll-behavior:smooth; overflow-x:hidden; -webkit-text-size-adjust:100%; }
-body { background:var(--black); color:var(--white); font-family:var(--font-body); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+html{scroll-behavior:smooth;overflow-x:hidden;-webkit-text-size-adjust:100%;}
+body{background:var(--black);color:var(--white);font-family:var(--font-body);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 
-@media (hover:hover) and (pointer:fine) {
-  body { cursor:none; }
-  .cursor { width:10px; height:10px; background:var(--blue); border-radius:50%; position:fixed; top:0; left:0; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
-  .cursor.expand { transform:translate(-50%,-50%) scale(3); opacity:.4; }
-  .cursor-trail { width:36px; height:36px; border:1px solid rgba(79,195,247,.4); border-radius:50%; position:fixed; top:0; left:0; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .18s ease; }
+/* ── CURSOR ── */
+@media(hover:hover)and(pointer:fine){
+  body{cursor:none;}
+  #cursor{width:10px;height:10px;background:var(--blue);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:transform .1s;}
+  #cursor.expand{transform:translate(-50%,-50%) scale(3);opacity:.4;}
+  #cursor-trail{width:36px;height:36px;border:1px solid rgba(79,195,247,.4);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .18s ease;}
 }
 
-.page-trans { position:fixed; inset:0; background:var(--black); z-index:9000; pointer-events:none; opacity:0; transition:opacity .35s ease; }
-.page-trans.active { opacity:1; pointer-events:all; }
+/* ── PAGE TRANSITION ── */
+.page-trans{position:fixed;inset:0;background:var(--black);z-index:9000;pointer-events:none;opacity:0;transition:opacity .35s ease;}
+.page-trans.active{opacity:1;pointer-events:all;}
 
-/* ── NAV ── */
-.topnav { position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:500; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(16px,4vw,48px); background:rgba(2,2,2,.96); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-bottom:1px solid rgba(79,195,247,.08); }
-.nav-logo { font-family:var(--font-display); font-size:clamp(20px,5vw,28px); letter-spacing:5px; color:var(--white); text-decoration:none; flex-shrink:0; }
-.nav-logo span { color:var(--blue); }
-.nav-links { display:flex; gap:clamp(20px,4vw,40px); list-style:none; }
-.nav-links a { color:var(--white-dim); text-decoration:none; font-family:var(--font-mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; transition:color .3s; position:relative; }
-.nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:1px; background:var(--blue); transition:width .3s; }
-.nav-links a:hover, .nav-links a.active { color:var(--blue); }
-.nav-links a:hover::after, .nav-links a.active::after { width:100%; }
-.nav-right { display:flex; align-items:center; gap:16px; }
-.nav-cart { display:flex; align-items:center; gap:8px; color:var(--white-dim); font-family:var(--font-mono); font-size:11px; letter-spacing:2px; text-decoration:none; transition:color .3s; }
-.nav-cart:hover { color:var(--blue); }
-.cart-count { background:var(--blue); color:var(--black); border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; flex-shrink:0; }
-.hamburger { display:none; flex-direction:column; gap:5px; background:none; border:none; padding:10px 8px; cursor:pointer; align-items:center; justify-content:center; }
-.hamburger span { display:block; width:22px; height:1.5px; background:var(--white); border-radius:2px; transition:all .3s; pointer-events:none; }
-.hamburger.open span:nth-child(1) { transform:translateY(6.5px) rotate(45deg); }
-.hamburger.open span:nth-child(2) { opacity:0; transform:scaleX(0); }
-.hamburger.open span:nth-child(3) { transform:translateY(-6.5px) rotate(-45deg); }
-.mobile-menu { display:none; position:fixed; inset:0; background:rgba(2,2,2,.98); z-index:490; flex-direction:column; align-items:center; justify-content:center; gap:32px; opacity:0; pointer-events:none; transition:opacity .3s; backdrop-filter:blur(24px); }
-.mobile-menu.open { opacity:1; pointer-events:all; }
-.mobile-menu a { font-family:var(--font-display); font-size:clamp(36px,10vw,60px); letter-spacing:6px; color:var(--white); text-decoration:none; text-align:center; transition:color .25s; display:block; }
-.mobile-menu a:active { color:var(--blue); }
-
-/* ── PAGE HEADER ── */
-.page-header { padding:calc(var(--nav-h) + clamp(32px,6vw,80px)) clamp(16px,4vw,48px) clamp(24px,4vw,48px); border-bottom:1px solid rgba(255,255,255,.05); position:relative; overflow:hidden; }
-.page-header::before { content:'SHOP'; font-family:var(--font-display); font-size:clamp(120px,25vw,300px); position:absolute; right:-10px; top:50%; transform:translateY(-50%); opacity:.02; letter-spacing:10px; pointer-events:none; line-height:1; white-space:nowrap; }
-.page-header-inner { max-width:1400px; margin:0 auto; }
-.page-tag { font-family:var(--font-mono); font-size:10px; letter-spacing:5px; color:var(--blue); text-transform:uppercase; margin-bottom:12px; }
-.page-title { font-family:var(--font-display); font-size:clamp(48px,10vw,100px); letter-spacing:4px; text-transform:uppercase; line-height:1; }
-.page-title em { font-style:normal; color:transparent; -webkit-text-stroke:1px rgba(79,195,247,.4); }
-
-/* ── FILTER BAR ── */
-.filter-bar { padding:clamp(12px,2vw,20px) clamp(16px,4vw,48px); border-bottom:1px solid rgba(255,255,255,.04); background:rgba(8,8,8,.95); position:sticky; top:var(--nav-h); z-index:90; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-.filter-inner { max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
-.filter-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.filter-tabs { display:flex; gap:4px; flex-wrap:wrap; }
-.filter-tab { font-family:var(--font-mono); font-size:clamp(8px,2vw,10px); letter-spacing:2px; text-transform:uppercase; padding:clamp(6px,1.5vw,9px) clamp(12px,3vw,20px); border:1px solid rgba(255,255,255,.08); background:none; color:var(--white-dim); cursor:pointer; transition:all .3s; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%); white-space:nowrap; }
-.filter-tab.active, .filter-tab:hover { border-color:var(--blue); color:var(--blue); background:rgba(79,195,247,.06); }
-.filter-right { display:flex; align-items:center; gap:12px; }
-.sort-select { font-family:var(--font-mono); font-size:clamp(8px,2vw,10px); letter-spacing:2px; text-transform:uppercase; padding:8px 12px; border:1px solid rgba(255,255,255,.08); background:var(--grey-dark); color:var(--white-dim); cursor:pointer; outline:none; transition:border-color .3s; max-width:180px; }
-.sort-select:focus { border-color:var(--blue); }
-.filter-count { font-family:var(--font-mono); font-size:10px; letter-spacing:3px; color:var(--white-dim); white-space:nowrap; }
-.filter-count span { color:var(--blue); }
-
-/* ── PRODUCT GRID ── */
-.shop-main { padding:clamp(24px,4vw,48px) clamp(16px,4vw,48px) clamp(80px,12vw,120px); max-width:1400px; margin:0 auto; }
-.product-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(12px,3vw,24px); }
-
-.product-card { position:relative; transition:transform .12s ease; transform-style:preserve-3d; animation:fadeInCard .55s ease both; }
-@keyframes fadeInCard { from{opacity:0;transform:translateY(28px);} to{opacity:1;transform:translateY(0);} }
-.product-card:nth-child(1){animation-delay:.05s;} .product-card:nth-child(2){animation-delay:.1s;} .product-card:nth-child(3){animation-delay:.15s;} .product-card:nth-child(4){animation-delay:.2s;} .product-card:nth-child(5){animation-delay:.25s;} .product-card:nth-child(6){animation-delay:.3s;}
-
-.card-image-wrap { position:relative; aspect-ratio:3/4; overflow:hidden; background:var(--grey-dark); border:1px solid rgba(255,255,255,.04); margin-bottom:clamp(10px,2vw,16px); }
-.card-image { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transition:transform .6s ease; }
-.product-card:hover .card-image { transform:scale(1.04); }
-.card-glow { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 80%,rgba(79,195,247,.12) 0%,transparent 60%); opacity:0; transition:opacity .5s; pointer-events:none; }
-.product-card:hover .card-glow { opacity:1; }
-.card-badge { position:absolute; top:12px; left:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:3px; text-transform:uppercase; padding:5px 12px; background:var(--blue); color:var(--black); font-weight:700; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%); }
-.card-badge.hot { background:#e53; }
-.card-quick { position:absolute; bottom:0; left:0; right:0; background:rgba(2,2,2,.88); border-top:1px solid rgba(79,195,247,.2); padding:13px 16px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--blue); transform:translateY(100%); transition:transform .3s ease; backdrop-filter:blur(10px); text-decoration:none; }
-.product-card:hover .card-quick { transform:translateY(0); }
-
-.card-info { padding:0 2px; }
-.card-name { font-family:var(--font-display); font-size:clamp(18px,3.5vw,22px); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
-.card-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.card-price { font-family:var(--font-mono); font-size:clamp(11px,2.5vw,13px); color:var(--blue); }
-.card-category { font-family:var(--font-mono); font-size:9px; letter-spacing:3px; color:var(--white-dim); text-transform:uppercase; }
-.card-sizes { display:flex; gap:5px; flex-wrap:wrap; }
-.card-size { font-family:var(--font-mono); font-size:9px; letter-spacing:1px; padding:4px 8px; border:1px solid rgba(255,255,255,.1); color:var(--white-dim); background:none; cursor:pointer; transition:all .2s; min-height:28px; }
-.card-size:hover { border-color:var(--blue); color:var(--blue); }
-
-.hoodie-svg { transition:opacity .3s; }
-.product-card:hover .hoodie-svg { opacity:.95; }
-
-/* ── BOTTOM NAV ── */
-.bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(6,6,6,.97); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid rgba(79,195,247,.12); z-index:400; justify-content:space-around; align-items:stretch; padding-bottom:var(--safe-bottom); }
-.bottom-nav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; font-family:var(--font-mono); font-size:9px; letter-spacing:2px; color:var(--white-dim); text-decoration:none; text-transform:uppercase; transition:color .25s; padding:10px 8px; flex:1; position:relative; }
-.bottom-nav a.active { color:var(--blue); }
-.bottom-nav a.active::before { content:''; position:absolute; top:0; left:20%; right:20%; height:1px; background:var(--blue); }
-.bottom-nav svg { width:22px; height:22px; flex-shrink:0; }
-
-/* ── FOOTER ── */
-footer { background:var(--grey-dark); border-top:1px solid rgba(255,255,255,.05); padding:clamp(32px,5vw,56px) clamp(16px,4vw,48px); text-align:center; }
-.footer-logo { font-family:var(--font-display); font-size:clamp(28px,6vw,40px); letter-spacing:5px; text-transform:uppercase; }
-.footer-logo span { color:var(--blue); }
-.footer-copy { margin-top:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:3px; color:rgba(255,255,255,.18); text-transform:uppercase; }
-
-/* ── RESPONSIVE ── */
-@media (max-width:900px) {
-  .nav-links,.nav-cart { display:none; }
-  .hamburger { display:flex; }
-  .mobile-menu { display:flex; }
-  .bottom-nav { display:flex; }
-  footer { padding-bottom:calc(70px + var(--safe-bottom)); }
-  .product-grid { grid-template-columns:repeat(2,1fr); }
-  .filter-inner { gap:10px; }
+/* ══ NAV ══ */
+.topnav{
+  position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(20px,4vw,56px);
+  background:rgba(2,2,2,.97);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(79,195,247,.08);
 }
-@media (max-width:600px) {
-  .filter-tabs { gap:4px; }
-  .filter-tab { padding:6px 10px; font-size:8px; letter-spacing:1px; }
-  .sort-select { max-width:140px; }
-  .product-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
-  /* Always show quick view CTA on touch */
-  .card-quick { transform:translateY(0); opacity:.9; font-size:9px; padding:10px 8px; }
+.nav-logo{font-family:var(--font-display);font-size:26px;letter-spacing:6px;color:var(--white);text-decoration:none;flex-shrink:0;}
+.nav-logo span{color:var(--blue);}
+.nav-center{display:flex;gap:40px;list-style:none;}
+.nav-center a{color:var(--white-dim);text-decoration:none;font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;transition:color .3s;position:relative;}
+.nav-center a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--blue);transition:width .3s;}
+.nav-center a:hover,.nav-center a.active{color:var(--blue);}
+.nav-center a:hover::after,.nav-center a.active::after{width:100%;}
+.nav-right{display:flex;align-items:center;gap:20px;}
+.nav-cart{display:flex;align-items:center;gap:8px;color:var(--white-dim);font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-decoration:none;transition:color .3s;}
+.nav-cart:hover{color:var(--blue);}
+.cart-badge{background:var(--blue);color:var(--black);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;padding:10px 6px;cursor:pointer;}
+.hamburger span{display:block;width:22px;height:1.5px;background:var(--white);border-radius:2px;transition:all .3s;pointer-events:none;}
+.hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+
+/* Mobile overlay menu */
+.mobile-menu{display:none;position:fixed;inset:0;background:rgba(2,2,2,.98);z-index:490;flex-direction:column;align-items:center;justify-content:center;gap:36px;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(24px);}
+.mobile-menu.open{opacity:1;pointer-events:all;}
+.mobile-menu a{font-family:var(--font-display);font-size:clamp(40px,12vw,64px);letter-spacing:6px;color:var(--white);text-decoration:none;display:block;text-align:center;transition:color .25s;}
+.mobile-menu a:active{color:var(--blue);}
+
+/* ══ PAGE HERO HEADER ══ */
+.page-header{
+  position:relative;overflow:hidden;
+  padding:calc(var(--nav-h) + 64px) clamp(20px,4vw,56px) 48px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  background:linear-gradient(180deg, rgba(8,8,8,1) 0%, rgba(2,2,2,1) 100%);
 }
-@media (max-width:380px) {
-  .product-grid { grid-template-columns:1fr; }
-  .nav-logo { font-size:20px; }
+.page-header::before{
+  content:'SHOP';
+  font-family:var(--font-display);
+  font-size:clamp(140px,28vw,380px);
+  position:absolute;right:-24px;top:50%;transform:translateY(-50%);
+  opacity:.025;letter-spacing:16px;pointer-events:none;line-height:1;white-space:nowrap;
+  color:var(--white);
+}
+.page-header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(79,195,247,.2),transparent);
+}
+.page-header-inner{max-width:1400px;margin:0 auto;}
+.page-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:6px;color:var(--blue);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+.page-eyebrow::before{content:'';width:28px;height:1px;background:var(--blue);flex-shrink:0;}
+.page-title{font-family:var(--font-display);font-size:clamp(52px,9vw,110px);letter-spacing:4px;text-transform:uppercase;line-height:.95;color:var(--white);}
+.page-title em{font-style:normal;color:transparent;-webkit-text-stroke:1px rgba(79,195,247,.45);}
+.page-header-meta{margin-top:24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.meta-item{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--white-dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.meta-dot{width:4px;height:4px;border-radius:50%;background:var(--blue);}
+
+/* ══ FILTER BAR ══ */
+.filter-bar{
+  position:sticky;top:var(--nav-h);z-index:90;
+  background:rgba(8,8,8,.98);
+  border-bottom:1px solid rgba(79,195,247,.07);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.filter-inner{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px clamp(20px,4vw,56px);
+  gap:16px;flex-wrap:wrap;
+}
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-tab{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  padding:8px 20px;border:1px solid rgba(255,255,255,.08);
+  background:none;color:var(--white-dim);cursor:pointer;
+  transition:all .25s;white-space:nowrap;
+  clip-path:polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%);
+}
+.filter-tab:hover{border-color:rgba(79,195,247,.4);color:rgba(79,195,247,.7);}
+.filter-tab.active{border-color:var(--blue);color:var(--blue);background:rgba(79,195,247,.07);}
+
+.filter-right{display:flex;align-items:center;gap:16px;}
+.sort-wrap{position:relative;}
+.sort-select{
+  appearance:none;-webkit-appearance:none;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  padding:8px 36px 8px 14px;
+  border:1px solid rgba(255,255,255,.1);
+  background:var(--grey-dark);color:var(--white-dim);
+  cursor:pointer;outline:none;transition:border-color .3s;
+}
+.sort-select:focus,.sort-select:hover{border-color:var(--blue);}
+.sort-wrap::after{
+  content:'↓';position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  color:var(--blue);font-size:11px;pointer-events:none;
+}
+.filter-count{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--white-dim);white-space:nowrap;}
+.filter-count strong{color:var(--blue);font-weight:400;}
+
+/* ══ SHOP MAIN ══ */
+.shop-main{
+  max-width:1400px;margin:0 auto;
+  padding:clamp(24px,3vw,48px) clamp(20px,4vw,56px) clamp(80px,10vw,140px);
+}
+
+/* ══ PRODUCT GRID ══ */
+.product-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:clamp(16px,2.5vw,32px);
+}
+
+/* ══ PRODUCT CARD ══ */
+.product-card{
+  display:flex;flex-direction:column;
+  position:relative;
+  cursor:pointer;
+  animation:cardIn .6s ease both;
+}
+.product-card:nth-child(1){animation-delay:.04s;}
+.product-card:nth-child(2){animation-delay:.09s;}
+.product-card:nth-child(3){animation-delay:.14s;}
+.product-card:nth-child(4){animation-delay:.19s;}
+.product-card:nth-child(5){animation-delay:.24s;}
+.product-card:nth-child(6){animation-delay:.29s;}
+@keyframes cardIn{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Card image wrapper ── */
+.card-img-wrap{
+  position:relative;aspect-ratio:3/4;overflow:hidden;
+  margin-bottom:clamp(12px,2vw,18px);
+  border:1px solid rgba(255,255,255,.05);
+}
+/* Gradient background per card — set via inline style */
+.card-bg{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .7s cubic-bezier(.25,.46,.45,.94);
+}
+.product-card:hover .card-bg{transform:scale(1.06);}
+
+/* Overlay gradient */
+.card-img-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(2,2,2,0) 50%,rgba(2,2,2,.7) 100%);
+  z-index:1;pointer-events:none;
+}
+
+/* Glow on hover */
+.card-glow{
+  position:absolute;inset:0;z-index:2;
+  background:radial-gradient(ellipse at 50% 100%,rgba(79,195,247,.18) 0%,transparent 65%);
+  opacity:0;transition:opacity .5s;pointer-events:none;
+}
+.product-card:hover .card-glow{opacity:1;}
+
+/* Badge */
+.card-badge{
+  position:absolute;top:14px;left:14px;z-index:4;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:3px;
+  text-transform:uppercase;padding:5px 14px;
+  background:var(--blue);color:var(--black);font-weight:700;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+  pointer-events:none;
+}
+.card-badge.new{background:var(--blue);}
+.card-badge.hot{background:#ff4444;}
+.card-badge.ltd{background:rgba(79,195,247,.15);color:var(--blue);border:1px solid rgba(79,195,247,.35);}
+
+/* Quick view CTA */
+.card-cta{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  background:rgba(2,2,2,.92);
+  border-top:1px solid rgba(79,195,247,.25);
+  padding:14px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--blue);
+  text-decoration:none;
+  transform:translateY(101%);
+  transition:transform .3s cubic-bezier(.25,.46,.45,.94);
+  backdrop-filter:blur(12px);
+}
+.product-card:hover .card-cta{transform:translateY(0);}
+.card-cta svg{flex-shrink:0;transition:transform .3s;}
+.product-card:hover .card-cta svg{transform:translateX(4px);}
+
+/* ── Card info ── */
+.card-info{display:flex;flex-direction:column;flex:1;padding:0 2px;}
+.card-name{
+  font-family:var(--font-display);font-size:clamp(18px,2.2vw,24px);
+  letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:8px;color:var(--white);line-height:1.1;
+}
+.card-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.card-price{font-family:var(--font-mono);font-size:clamp(12px,1.5vw,14px);color:var(--blue);letter-spacing:1px;}
+.card-cat{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--white-dim);text-transform:uppercase;}
+.card-sizes{display:flex;gap:5px;flex-wrap:wrap;}
+.sz{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+  padding:4px 9px;min-height:26px;
+  border:1px solid rgba(255,255,255,.1);
+  color:var(--white-dim);background:none;cursor:pointer;
+  transition:border-color .2s,color .2s;
+}
+.sz:hover{border-color:var(--blue);color:var(--blue);}
+
+/* ══ EMPTY STATE ══ */
+.empty-state{
+  display:none;grid-column:1/-1;
+  text-align:center;padding:100px 20px;
+  flex-direction:column;align-items:center;gap:16px;
+}
+.empty-state.show{display:flex;}
+.empty-title{font-family:var(--font-display);font-size:48px;letter-spacing:4px;text-transform:uppercase;color:var(--white-dim);}
+.empty-sub{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.2);text-transform:uppercase;}
+
+/* ══ BOTTOM NAV (mobile only) ══ */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(6,6,6,.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(79,195,247,.12);z-index:400;justify-content:space-around;align-items:stretch;padding-bottom:var(--safe-bottom);}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--white-dim);text-decoration:none;text-transform:uppercase;transition:color .25s;padding:10px 8px;flex:1;position:relative;}
+.bottom-nav a.active,.bottom-nav a:active{color:var(--blue);}
+.bottom-nav a.active::before{content:'';position:absolute;top:0;left:25%;right:25%;height:1px;background:var(--blue);}
+.bottom-nav svg{width:21px;height:21px;flex-shrink:0;}
+
+/* ══ FOOTER ══ */
+footer{background:var(--grey-dark);border-top:1px solid rgba(255,255,255,.05);padding:clamp(40px,6vw,72px) clamp(20px,4vw,56px) clamp(28px,4vw,40px);}
+.footer-inner{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:clamp(24px,4vw,64px);margin-bottom:clamp(28px,4vw,48px);}
+.footer-brand{font-family:var(--font-display);font-size:clamp(28px,5vw,48px);letter-spacing:5px;text-transform:uppercase;margin-bottom:10px;}
+.footer-brand span{color:var(--blue);}
+.footer-tagline{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--white-dim);text-transform:uppercase;}
+.footer-col h4{font-family:var(--font-mono);font-size:9px;letter-spacing:4px;color:var(--blue);text-transform:uppercase;margin-bottom:16px;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.footer-col ul a{color:var(--white-dim);text-decoration:none;font-family:var(--font-body);font-size:15px;letter-spacing:.5px;transition:color .3s;}
+.footer-col ul a:hover{color:var(--white);}
+.footer-bottom{max-width:1400px;margin:0 auto;border-top:1px solid rgba(255,255,255,.05);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.footer-copy{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:rgba(255,255,255,.18);text-transform:uppercase;}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:1100px){
+  .product-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:900px){
+  .nav-center,.nav-cart{display:none;}
+  .hamburger{display:flex;}
+  .mobile-menu{display:flex;}
+  .bottom-nav{display:flex;}
+  footer{padding-bottom:calc(72px + var(--safe-bottom));}
+  .footer-inner{grid-template-columns:1fr 1fr;gap:28px;}
+  .product-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .filter-inner{padding:10px 16px;}
+  .filter-tab{padding:7px 12px;font-size:9px;letter-spacing:1px;}
+  .filter-right{gap:10px;}
+  .filter-count{display:none;}
+  /* On touch: always show CTA */
+  .card-cta{transform:translateY(0);opacity:.95;}
+  .footer-inner{grid-template-columns:1fr;}
+  .footer-bottom{flex-direction:column;text-align:center;}
+}
+@media(max-width:400px){
+  .product-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .nav-logo{font-size:20px;letter-spacing:4px;}
 }
 </style>
 </head>
 <body>
-<div class="page-trans" id="pageTrans"></div>
-<div class="cursor" id="cursor"></div>
-<div class="cursor-trail" id="cursorTrail"></div>
 
+<div class="page-trans" id="pageTrans"></div>
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ══ NAV ══ -->
 <nav class="topnav">
   <a href="index.html" class="nav-logo">nuk<span>rax</span></a>
-  <ul class="nav-links">
+  <ul class="nav-center">
     <li><a href="index.html">Home</a></li>
     <li><a href="shop.html" class="active">Shop</a></li>
     <li><a href="cart.html">Cart</a></li>
@@ -154,246 +316,401 @@ footer { background:var(--grey-dark); border-top:1px solid rgba(255,255,255,.05)
   <div class="nav-right">
     <a href="cart.html" class="nav-cart">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <span class="cart-count" id="cartCount">0</span>
+      <span class="cart-badge" id="cartCount">0</span>
     </a>
-    <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
+<!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
   <a href="index.html" onclick="closeMenu()">Home</a>
   <a href="shop.html" onclick="closeMenu()">Shop</a>
   <a href="cart.html" onclick="closeMenu()">Cart</a>
 </div>
 
+<!-- ══ PAGE HEADER ══ -->
 <div class="page-header">
   <div class="page-header-inner">
-    <p class="page-tag">FW 2025 — New Wave Collection</p>
+    <p class="page-eyebrow">FW 2025 — New Wave Collection</p>
     <h1 class="page-title">All <em>Drops</em></h1>
+    <div class="page-header-meta">
+      <span class="meta-item"><span class="meta-dot"></span>6 Products</span>
+      <span class="meta-item"><span class="meta-dot"></span>Free Shipping over ₹2000</span>
+      <span class="meta-item"><span class="meta-dot"></span>Limited Stock</span>
+    </div>
   </div>
 </div>
 
+<!-- ══ FILTER BAR ══ -->
 <div class="filter-bar">
   <div class="filter-inner">
-    <div class="filter-left">
-      <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterProducts(this,'all')">All</button>
-        <button class="filter-tab" onclick="filterProducts(this,'hoodie')">Hoodies</button>
-        <button class="filter-tab" onclick="filterProducts(this,'crewneck')">Crewneck</button>
-        <button class="filter-tab" onclick="filterProducts(this,'limited')">Limited</button>
-      </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterProducts(this,'all')">All</button>
+      <button class="filter-tab" onclick="filterProducts(this,'hoodie')">Hoodies</button>
+      <button class="filter-tab" onclick="filterProducts(this,'crewneck')">Crewneck</button>
+      <button class="filter-tab" onclick="filterProducts(this,'limited')">Limited</button>
     </div>
     <div class="filter-right">
-      <select class="sort-select" onchange="sortProducts(this.value)">
-        <option value="">Sort: Featured</option>
-        <option value="low">Price: Low → High</option>
-        <option value="high">Price: High → Low</option>
-        <option value="new">Newest</option>
-      </select>
-      <span class="filter-count"><span id="productCount">6</span> items</span>
+      <div class="sort-wrap">
+        <select class="sort-select" onchange="sortProducts(this.value)">
+          <option value="">Sort: Featured</option>
+          <option value="low">Price: Low → High</option>
+          <option value="high">Price: High → Low</option>
+          <option value="new">Newest First</option>
+        </select>
+      </div>
+      <span class="filter-count"><strong id="productCount">6</strong> items</span>
     </div>
   </div>
 </div>
 
+<!-- ══ PRODUCTS ══ -->
 <main class="shop-main">
   <div class="product-grid" id="productGrid">
 
+    <!-- Card 1: Phantom Hoodie -->
     <div class="product-card" data-category="hoodie limited" data-price="4999" data-id="1">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="120" height="140" viewBox="0 0 200 220" fill="none" opacity="0.75">
-            <path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.04)"/>
-            <path d="M100 52 Q100 35 85 28 Q78 25 70 26" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <path d="M100 52 Q100 35 115 28 Q122 25 130 26" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <line x1="62" y1="100" x2="138" y2="100" stroke="rgba(79,195,247,.2)" stroke-width="0.5"/>
-            <line x1="62" y1="140" x2="138" y2="140" stroke="rgba(79,195,247,.2)" stroke-width="0.5"/>
-            <path d="M85 185 L85 200 L115 200 L115 185" stroke="#4fc3f7" stroke-width="1" fill="rgba(79,195,247,.03)"/>
-            <circle cx="100" cy="195" r="2" fill="#4fc3f7" opacity="0.5"/>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#0a0a14 0%,#111828 50%,#080d18 100%);">
+          <svg width="130" height="155" viewBox="0 0 200 225" fill="none">
+            <path d="M40 62 L78 42 L100 54 L122 42 L160 62 L149 86 L137 79 L137 188 L63 188 L63 79 L51 86 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.06)"/>
+            <path d="M100 54 Q100 36 85 29 Q78 26 70 27" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity=".7"/>
+            <path d="M100 54 Q100 36 115 29 Q122 26 130 27" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity=".7"/>
+            <line x1="63" y1="105" x2="137" y2="105" stroke="#4fc3f7" stroke-width=".5" opacity=".2"/>
+            <line x1="63" y1="145" x2="137" y2="145" stroke="#4fc3f7" stroke-width=".5" opacity=".2"/>
+            <path d="M85 188 L85 202 L115 202 L115 188" stroke="#4fc3f7" stroke-width="1" fill="rgba(79,195,247,.04)"/>
+            <circle cx="100" cy="197" r="2.5" fill="#4fc3f7" opacity=".5"/>
+            <!-- subtle glow core -->
+            <ellipse cx="100" cy="120" rx="30" ry="40" fill="rgba(79,195,247,0.04)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
-        <span class="card-badge">Limited</span>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <span class="card-badge ltd">Limited</span>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Phantom Hoodie</h3>
-        <div class="card-meta"><span class="card-price">₹4,999</span><span class="card-category">Hoodie</span></div>
-        <div class="card-sizes"><button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button></div>
+        <div class="card-row">
+          <span class="card-price">₹4,999</span>
+          <span class="card-cat">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">XS</button><button class="sz">S</button>
+          <button class="sz">M</button><button class="sz">L</button><button class="sz">XL</button>
+        </div>
       </div>
     </div>
 
+    <!-- Card 2: Void Oversized -->
     <div class="product-card" data-category="hoodie" data-price="3499" data-id="2">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="120" height="140" viewBox="0 0 200 220" fill="none" opacity="0.65">
-            <path d="M35 65 L75 42 L100 55 L125 42 L165 65 L152 90 L140 82 L140 185 L60 185 L60 82 L48 90 Z" stroke="#888899" stroke-width="1.5" fill="rgba(255,255,255,.02)"/>
-            <path d="M100 55 Q100 35 85 28 Q78 25 70 26" stroke="#888" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
-            <path d="M100 55 Q100 35 115 28 Q122 25 130 26" stroke="#888" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
-            <rect x="80" y="115" width="40" height="18" rx="9" stroke="rgba(255,255,255,.15)" stroke-width="1" fill="rgba(255,255,255,.02)"/>
-            <path d="M85 185 L85 200 L115 200 L115 185" stroke="#888" stroke-width="1" fill="none"/>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#0d0d0d 0%,#151515 50%,#0a0a0a 100%);">
+          <svg width="130" height="155" viewBox="0 0 200 225" fill="none">
+            <path d="M36 66 L74 44 L100 56 L126 44 L164 66 L152 90 L140 83 L140 188 L60 188 L60 83 L48 90 Z" stroke="#666677" stroke-width="1.5" fill="rgba(255,255,255,0.03)"/>
+            <path d="M100 56 Q100 38 85 31 Q78 28 70 29" stroke="#666677" stroke-width="1" fill="none" stroke-dasharray="4,3" opacity=".6"/>
+            <path d="M100 56 Q100 38 115 31 Q122 28 130 29" stroke="#666677" stroke-width="1" fill="none" stroke-dasharray="4,3" opacity=".6"/>
+            <rect x="82" y="116" width="36" height="17" rx="8.5" stroke="rgba(255,255,255,.18)" stroke-width="1" fill="rgba(255,255,255,0.02)"/>
+            <path d="M85 188 L85 202 L115 202 L115 188" stroke="#555566" stroke-width="1" fill="none"/>
+            <ellipse cx="100" cy="125" rx="28" ry="36" fill="rgba(255,255,255,0.02)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Void Oversized</h3>
-        <div class="card-meta"><span class="card-price">₹3,499</span><span class="card-category">Hoodie</span></div>
-        <div class="card-sizes"><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button><button class="card-size">XXL</button></div>
+        <div class="card-row">
+          <span class="card-price">₹3,499</span>
+          <span class="card-cat">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">S</button><button class="sz">M</button>
+          <button class="sz">L</button><button class="sz">XL</button><button class="sz">XXL</button>
+        </div>
       </div>
     </div>
 
+    <!-- Card 3: Ghost Crewneck -->
     <div class="product-card" data-category="crewneck" data-price="2999" data-id="3">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="110" height="125" viewBox="0 0 200 210" fill="none" opacity="0.7">
-            <path d="M45 62 L80 45 L100 55 L120 45 L155 62 L145 82 L134 76 L134 180 L66 180 L66 76 L55 82 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,.03)"/>
-            <path d="M88 55 Q100 48 112 55" stroke="#4fc3f7" stroke-width="1.5" fill="none"/>
-            <line x1="66" y1="108" x2="134" y2="108" stroke="rgba(79,195,247,.15)" stroke-width="0.5"/>
-            <text x="82" y="145" font-family="monospace" font-size="13" fill="rgba(79,195,247,.3)" letter-spacing="2">NKX</text>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#080d18 0%,#0f1520 50%,#060a12 100%);">
+          <svg width="125" height="140" viewBox="0 0 200 215" fill="none">
+            <path d="M46 63 L80 46 L100 56 L120 46 L154 63 L144 82 L133 76 L133 182 L67 182 L67 76 L56 82 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.04)"/>
+            <path d="M88 56 Q100 49 112 56" stroke="#4fc3f7" stroke-width="1.5" fill="none" opacity=".8"/>
+            <line x1="67" y1="110" x2="133" y2="110" stroke="rgba(79,195,247,.18)" stroke-width=".6"/>
+            <text x="80" y="148" font-family="monospace" font-size="15" fill="rgba(79,195,247,0.25)" letter-spacing="3">NKX</text>
+            <ellipse cx="100" cy="120" rx="25" ry="32" fill="rgba(79,195,247,0.03)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Ghost Crewneck</h3>
-        <div class="card-meta"><span class="card-price">₹2,999</span><span class="card-category">Crewneck</span></div>
-        <div class="card-sizes"><button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button></div>
+        <div class="card-row">
+          <span class="card-price">₹2,999</span>
+          <span class="card-cat">Crewneck</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">XS</button><button class="sz">S</button>
+          <button class="sz">M</button><button class="sz">L</button>
+        </div>
       </div>
     </div>
 
+    <!-- Card 4: Spectre Edition -->
     <div class="product-card" data-category="hoodie limited" data-price="5999" data-id="4">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="120" height="140" viewBox="0 0 200 220" fill="none" opacity="0.7">
-            <path d="M40 60 L80 40 L100 52 L120 40 L160 60 L150 85 L138 78 L138 185 L62 185 L62 78 L50 85 Z" stroke="rgba(200,200,255,.6)" stroke-width="1.5" fill="rgba(200,200,255,.03)"/>
-            <path d="M100 52 Q100 35 85 28 Q78 25 70 26" stroke="rgba(200,200,255,.4)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <path d="M100 52 Q100 35 115 28 Q122 25 130 26" stroke="rgba(200,200,255,.4)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <path d="M80 120 L90 110 L100 118 L110 108 L120 120" stroke="rgba(200,200,255,.4)" stroke-width="1" fill="none"/>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#0e0b1a 0%,#160f26 50%,#0a0810 100%);">
+          <svg width="130" height="155" viewBox="0 0 200 225" fill="none">
+            <path d="M40 62 L78 42 L100 54 L122 42 L160 62 L149 86 L137 79 L137 188 L63 188 L63 79 L51 86 Z" stroke="rgba(180,160,255,0.6)" stroke-width="1.5" fill="rgba(160,130,255,0.04)"/>
+            <path d="M100 54 Q100 36 85 29" stroke="rgba(180,160,255,0.45)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M100 54 Q100 36 115 29" stroke="rgba(180,160,255,0.45)" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+            <path d="M78 122 L88 112 L100 120 L112 110 L122 122" stroke="rgba(180,160,255,0.45)" stroke-width="1.2" fill="none"/>
+            <ellipse cx="100" cy="135" rx="26" ry="30" fill="rgba(150,100,255,0.04)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
-        <span class="card-badge">New</span>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <span class="card-badge new">New</span>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Spectre Edition</h3>
-        <div class="card-meta"><span class="card-price">₹5,999</span><span class="card-category">Limited</span></div>
-        <div class="card-sizes"><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button></div>
+        <div class="card-row">
+          <span class="card-price">₹5,999</span>
+          <span class="card-cat">Limited</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">M</button><button class="sz">L</button><button class="sz">XL</button>
+        </div>
       </div>
     </div>
 
+    <!-- Card 5: Null Crewneck -->
     <div class="product-card" data-category="crewneck" data-price="2499" data-id="5">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="110" height="125" viewBox="0 0 200 210" fill="none" opacity="0.6">
-            <path d="M45 62 L80 45 L100 55 L120 45 L155 62 L145 82 L134 76 L134 180 L66 180 L66 76 L55 82 Z" stroke="#666" stroke-width="1.5" fill="rgba(255,255,255,.015)"/>
-            <path d="M88 55 Q100 48 112 55" stroke="#666" stroke-width="1.5" fill="none"/>
-            <rect x="76" y="100" width="48" height="28" rx="4" stroke="rgba(255,255,255,.1)" stroke-width="1" fill="none"/>
-            <line x1="76" y1="114" x2="124" y2="114" stroke="rgba(255,255,255,.08)" stroke-width="0.5"/>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#0d0d0d 0%,#121212 50%,#0a0a0a 100%);">
+          <svg width="125" height="140" viewBox="0 0 200 215" fill="none">
+            <path d="M46 63 L80 46 L100 56 L120 46 L154 63 L144 82 L133 76 L133 182 L67 182 L67 76 L56 82 Z" stroke="#555" stroke-width="1.5" fill="rgba(255,255,255,0.02)"/>
+            <path d="M88 56 Q100 49 112 56" stroke="#555" stroke-width="1.5" fill="none" opacity=".8"/>
+            <rect x="75" y="100" width="50" height="30" rx="4" stroke="rgba(255,255,255,.12)" stroke-width="1" fill="none"/>
+            <line x1="75" y1="115" x2="125" y2="115" stroke="rgba(255,255,255,.07)" stroke-width=".6"/>
+            <ellipse cx="100" cy="145" rx="20" ry="14" fill="rgba(255,255,255,0.02)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Null Crewneck</h3>
-        <div class="card-meta"><span class="card-price">₹2,499</span><span class="card-category">Crewneck</span></div>
-        <div class="card-sizes"><button class="card-size">XS</button><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button></div>
+        <div class="card-row">
+          <span class="card-price">₹2,499</span>
+          <span class="card-cat">Crewneck</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">XS</button><button class="sz">S</button>
+          <button class="sz">M</button><button class="sz">L</button><button class="sz">XL</button>
+        </div>
       </div>
     </div>
 
+    <!-- Card 6: Echo Pullover -->
     <div class="product-card" data-category="hoodie" data-price="3999" data-id="6">
-      <div class="card-image-wrap">
-        <div class="card-image">
-          <svg class="hoodie-svg" width="120" height="140" viewBox="0 0 200 220" fill="none" opacity="0.72">
-            <path d="M38 62 L78 42 L100 54 L122 42 L162 62 L151 87 L139 80 L139 186 L61 186 L61 80 L49 87 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,.03)"/>
-            <path d="M100 54 Q100 34 84 27" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <path d="M100 54 Q100 34 116 27" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
-            <circle cx="100" cy="125" r="16" stroke="rgba(79,195,247,.3)" stroke-width="1" fill="none"/>
-            <circle cx="100" cy="125" r="8" stroke="rgba(79,195,247,.2)" stroke-width="0.5" fill="rgba(79,195,247,.04)"/>
+      <div class="card-img-wrap">
+        <div class="card-bg" style="background:linear-gradient(145deg,#080f18 0%,#0d1a26 50%,#060c14 100%);">
+          <svg width="130" height="155" viewBox="0 0 200 225" fill="none">
+            <path d="M38 64 L76 44 L100 56 L124 44 L162 64 L150 88 L138 81 L138 188 L62 188 L62 81 L50 88 Z" stroke="#4fc3f7" stroke-width="1.5" fill="rgba(79,195,247,0.04)"/>
+            <path d="M100 56 Q100 38 84 31" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity=".7"/>
+            <path d="M100 56 Q100 38 116 31" stroke="#4fc3f7" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity=".7"/>
+            <circle cx="100" cy="128" r="18" stroke="rgba(79,195,247,.3)" stroke-width="1.2" fill="none"/>
+            <circle cx="100" cy="128" r="9" stroke="rgba(79,195,247,.2)" stroke-width=".7" fill="rgba(79,195,247,0.05)"/>
+            <circle cx="100" cy="128" r="3" fill="rgba(79,195,247,.5)"/>
+            <ellipse cx="100" cy="128" rx="32" ry="40" fill="rgba(79,195,247,0.03)"/>
           </svg>
         </div>
         <div class="card-glow"></div>
         <span class="card-badge hot">Hot</span>
-        <a href="product.html" class="card-quick">Quick View →</a>
+        <a href="product.html" class="card-cta">
+          Quick View
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
       <div class="card-info">
         <h3 class="card-name">Echo Pullover</h3>
-        <div class="card-meta"><span class="card-price">₹3,999</span><span class="card-category">Hoodie</span></div>
-        <div class="card-sizes"><button class="card-size">S</button><button class="card-size">M</button><button class="card-size">L</button><button class="card-size">XL</button></div>
+        <div class="card-row">
+          <span class="card-price">₹3,999</span>
+          <span class="card-cat">Hoodie</span>
+        </div>
+        <div class="card-sizes">
+          <button class="sz">S</button><button class="sz">M</button>
+          <button class="sz">L</button><button class="sz">XL</button>
+        </div>
       </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <p class="empty-title">No results.</p>
+      <p class="empty-sub">Try a different filter</p>
     </div>
 
   </div>
 </main>
 
+<!-- Bottom Nav Mobile -->
 <nav class="bottom-nav">
-  <a href="index.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
-  <a href="shop.html" class="active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop</a>
-  <a href="cart.html"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Cart</a>
+  <a href="index.html">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home
+  </a>
+  <a href="shop.html" class="active">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop
+  </a>
+  <a href="cart.html">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Cart
+  </a>
 </nav>
 
+<!-- Footer -->
 <footer>
-  <div class="footer-logo">nuk<span>rax</span></div>
-  <p class="footer-copy">© 2025 nukrax — all rights reserved</p>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">nuk<span>rax</span></div>
+      <p class="footer-tagline">built different. worn different.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="cart.html">Cart</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Info</h4>
+      <ul>
+        <li><a href="#">Sizing Guide</a></li>
+        <li><a href="#">Shipping</a></li>
+        <li><a href="#">Returns</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2025 nukrax — all rights reserved</p>
+    <p class="footer-copy">new wave | fw 2025</p>
+  </div>
 </footer>
 
 <script>
+/* ── Device ── */
 const isTouch = !window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+/* ── Custom cursor ── */
 if (!isTouch) {
-  const cursor=document.getElementById('cursor'), trail=document.getElementById('cursorTrail');
+  const cur = document.getElementById('cursor');
+  const trail = document.getElementById('cursor-trail');
   let mx=0,my=0,tx=0,ty=0;
-  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
-  (function loop(){tx+=(mx-tx)*.12;ty+=(my-ty)*.12;trail.style.left=tx+'px';trail.style.top=ty+'px';requestAnimationFrame(loop);})();
-  document.querySelectorAll('a,button').forEach(el=>{el.addEventListener('mouseenter',()=>cursor.classList.add('expand'));el.addEventListener('mouseleave',()=>cursor.classList.remove('expand'));});
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cur.style.left = mx+'px'; cur.style.top = my+'px';
+  });
+  (function loop(){
+    tx += (mx-tx)*.12; ty += (my-ty)*.12;
+    trail.style.left=tx+'px'; trail.style.top=ty+'px';
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('a,button').forEach(el => {
+    el.addEventListener('mouseenter', () => cur.classList.add('expand'));
+    el.addEventListener('mouseleave', () => cur.classList.remove('expand'));
+  });
 }
 
-document.querySelectorAll('a[href]').forEach(link=>{
-  const href=link.getAttribute('href');
-  if(!href||href.startsWith('#')||href.startsWith('http'))return;
-  link.addEventListener('click',e=>{e.preventDefault();document.getElementById('pageTrans').classList.add('active');setTimeout(()=>window.location.href=href,360);});
+/* ── Page transitions ── */
+document.querySelectorAll('a[href]').forEach(link => {
+  const href = link.getAttribute('href');
+  if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return;
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('pageTrans').classList.add('active');
+    setTimeout(() => window.location.href = href, 360);
+  });
 });
 
-const hamburger=document.getElementById('hamburger'),mobileMenu=document.getElementById('mobileMenu');
-hamburger.addEventListener('click',()=>{const o=hamburger.classList.toggle('open');mobileMenu.classList.toggle('open',o);document.body.style.overflow=o?'hidden':'';});
-function closeMenu(){hamburger.classList.remove('open');mobileMenu.classList.remove('open');document.body.style.overflow='';}
+/* ── Hamburger ── */
+const hamburger = document.getElementById('hamburger');
+const mobileMenu = document.getElementById('mobileMenu');
+hamburger.addEventListener('click', () => {
+  const open = hamburger.classList.toggle('open');
+  mobileMenu.classList.toggle('open', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+});
+function closeMenu() {
+  hamburger.classList.remove('open');
+  mobileMenu.classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-try{const c=JSON.parse(localStorage.getItem('nukrax_cart')||'[]');document.getElementById('cartCount').textContent=c.reduce((a,b)=>a+(b.qty||1),0);}catch(e){}
+/* ── Cart count ── */
+try {
+  const c = JSON.parse(localStorage.getItem('nukrax_cart') || '[]');
+  document.getElementById('cartCount').textContent = c.reduce((a,b)=>a+(b.qty||1),0);
+} catch(e){}
 
-/* 3D tilt — desktop only */
+/* ── 3D tilt on desktop ── */
 if (!isTouch) {
-  document.querySelectorAll('.product-card').forEach(card=>{
-    card.addEventListener('mousemove',e=>{
-      const r=card.getBoundingClientRect();
-      const x=(e.clientX-r.left)/r.width-.5;
-      const y=(e.clientY-r.top)/r.height-.5;
-      card.style.transform=`perspective(800px) rotateY(${x*10}deg) rotateX(${-y*10}deg) translateZ(6px)`;
+  document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top)  / r.height - 0.5;
+      card.style.transform = `perspective(900px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateZ(8px)`;
     });
-    card.addEventListener('mouseleave',()=>{card.style.transform='';});
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
   });
 }
 
-function filterProducts(btn,category){
-  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+/* ── Filter ── */
+function filterProducts(btn, category) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  let count=0;
-  document.querySelectorAll('.product-card').forEach(card=>{
-    const show=category==='all'||card.dataset.category.includes(category);
-    card.style.display=show?'':'none';
-    if(show)count++;
+  let count = 0;
+  document.querySelectorAll('.product-card[data-id]').forEach(card => {
+    const show = category === 'all' || card.dataset.category.includes(category);
+    card.style.display = show ? '' : 'none';
+    if (show) count++;
   });
-  document.getElementById('productCount').textContent=count;
+  document.getElementById('productCount').textContent = count;
+  const empty = document.getElementById('emptyState');
+  empty.classList.toggle('show', count === 0);
 }
 
-function sortProducts(val){
-  const grid=document.getElementById('productGrid');
-  const cards=[...grid.querySelectorAll('.product-card')];
-  if(val==='low') cards.sort((a,b)=>+a.dataset.price-+b.dataset.price);
-  else if(val==='high') cards.sort((a,b)=>+b.dataset.price-+a.dataset.price);
-  else if(val==='new') cards.sort((a,b)=>+b.dataset.id-+a.dataset.id);
-  cards.forEach(c=>grid.appendChild(c));
+/* ── Sort ── */
+function sortProducts(val) {
+  const grid = document.getElementById('productGrid');
+  const cards = [...grid.querySelectorAll('.product-card[data-id]')];
+  if (val === 'low')  cards.sort((a,b) => +a.dataset.price - +b.dataset.price);
+  if (val === 'high') cards.sort((a,b) => +b.dataset.price - +a.dataset.price);
+  if (val === 'new')  cards.sort((a,b) => +b.dataset.id   - +a.dataset.id);
+  const empty = document.getElementById('emptyState');
+  cards.forEach(c => grid.insertBefore(c, empty));
 }
 </script>
 </body>
